@@ -1,0 +1,13 @@
+/* ... 加上你喜歡的樣式 ... */
+.book-item {
+    display: flex;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.book-item img {
+    width: 100px;
+    height: 150px;
+    margin-right: 15px;
+}
