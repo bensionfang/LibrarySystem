@@ -11,3 +11,74 @@
     height: 150px;
     margin-right: 15px;
 }
+
+.modal {
+    display: none;
+    /* 預設隱藏 */
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.results-section {
+    display: flex;
+    /* 啟用 Flexbox */
+    flex-wrap: wrap;
+    /* 允許換行 */
+    gap: 20px;
+    /* 卡片之間的間距 */
+    justify-content: center;
+    /* 卡片水平置中 */
+}
+
+.book-item {
+    /* 現在這是卡片本身 */
+    width: 200px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    /* 圓角 */
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* 加上陰影更有立體感 */
+    transition: transform 0.2s, box-shadow 0.2s;
+    /* 為了 hover 動畫 */
+    cursor: pointer;
+}
+
+.book-item:hover {
+    transform: translateY(-5px);
+    /* 滑鼠移上去時，卡片向上浮動 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.book-item img {
+    max-width: 100%;
+    height: auto;
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    /* ... 其他樣式 ... */
+}

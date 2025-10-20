@@ -41,3 +41,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// 在你的 displayBooks 函式裡面...
+// ... 產生 bookElement 的地方 ...
+
+bookElement.addEventListener('click', () => {
+    // 1. 找到 modal 並填入內容
+    const modalDetails = document.getElementById('modalBookDetails');
+    modalDetails.innerHTML = `
+        <h2>${book.title}</h2>
+        <p>作者: ${book.author}</p>
+        <p>出版社: ${book.publisher}</p>
+        <p>出版日期: ${book.publication_date}</p>
+        <p>ISBN: ${book.isbn}</p>
+        <p>簡介: ${book.description}</p>
+    `;
+
+    // 2. 顯示 modal
+    document.getElementById('bookModal').style.display = 'block';
+});
+
+// ... 記得還要寫關閉 modal 的邏輯 ...

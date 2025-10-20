@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>圖書館系統</title>
     <link rel="stylesheet" href="css/style.css">
+    <button id="searchButton">
+        <i class="fas fa-search"></i> 搜尋
+    </button>
 </head>
 
 <body>
@@ -24,6 +27,14 @@
     </main>
 
     <script src="js/main.js"></script>
+
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="modalBookDetails">
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
