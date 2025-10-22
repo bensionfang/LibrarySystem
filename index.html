@@ -1,40 +1,22 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>圖書館系統</title>
     <link rel="stylesheet" href="css/style.css">
-    <button id="searchButton">
-        <i class="fas fa-search"></i> 搜尋
-    </button>
 </head>
-
 <body>
-    <header>
-        <h1>圖書館藏書查詢系統</h1>
-    </header>
 
-    <main>
-        <section class="search-section">
-            <input type="text" id="searchInput" placeholder="請輸入書名關鍵字...">
-            <button id="searchButton">搜尋</button>
-        </section>
+    <h1>圖書館藏書查詢系統</h1>
 
-        <section id="resultsSection" class="results-section">
-        </section>
-    </main>
-
-    <script src="js/main.js"></script>
-
-    <div id="bookModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <div id="modalBookDetails">
-            </div>
-        </div>
+    <div id="search-area">
+        <input type="text" placeholder="請輸入書名關鍵字..." id="search-input">
+        <button id="search-button">搜尋</button>
     </div>
-</body>
 
+    <div id="results-area">
+        <h2>搜尋結果</h2>
+    </div>
+    <script src="js/main.js"></script>
+</body>
 </html>

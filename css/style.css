@@ -1,84 +1,56 @@
-/* ... 加上你喜歡的樣式 ... */
-.book-item {
-    display: flex;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    padding: 10px;
-}
+/* 這是 CSS 的註解，不會被執行 */
 
-.book-item img {
-    width: 100px;
-    height: 150px;
-    margin-right: 15px;
-}
+/* CSS 語法: 
+   選擇器 {
+       屬性: 值;
+   }
+   白話文:
+   我要選誰 {
+       把他改成怎樣;
+   }
+*/
 
-.modal {
-    display: none;
-    /* 預設隱藏 */
-    position: fixed;
-    z-index: 100;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-}
-
-.close-button {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.results-section {
-    display: flex;
-    /* 啟用 Flexbox */
-    flex-wrap: wrap;
-    /* 允許換行 */
-    gap: 20px;
-    /* 卡片之間的間距 */
-    justify-content: center;
-    /* 卡片水平置中 */
-}
-
-.book-item {
-    /* 現在這是卡片本身 */
-    width: 200px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    /* 圓角 */
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* 加上陰影更有立體感 */
-    transition: transform 0.2s, box-shadow 0.2s;
-    /* 為了 hover 動畫 */
-    cursor: pointer;
-}
-
-.book-item:hover {
-    transform: translateY(-5px);
-    /* 滑鼠移上去時，卡片向上浮動 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.book-item img {
-    max-width: 100%;
-    height: auto;
-}
-
+/* 選擇 <body> (整個網頁) */
 body {
-    font-family: 'Noto Sans TC', sans-serif;
-    /* ... 其他樣式 ... */
+    font-family: sans-serif; /* 換一個看起來比較舒服的「非襯線字體」 */
+    margin: 20px;            /* 讓網頁內容不要緊貼著瀏覽器的邊緣 */
+}
+
+/* 選擇 <h1> (最大的標題) */
+h1 {
+    color: #446688; /* 換一個沉穩的藍灰色 */
+    text-align: center;  /* 讓標題置中 */
+}
+
+/* 選擇 <img> (所有的圖片) */
+img {
+    border: 1px solid #ddd; /* 幫圖片加上一個淺淺的灰色邊框 */
+    border-radius: 4px;     /* 讓邊框有點圓角 */
+}
+
+/* --- 第三步：排版 --- */
+
+/* 選擇 id="search-area" (身分證字號用 # 來選) */
+#search-area {
+    text-align: center; /* 讓裡面的東西 (輸入框、按鈕) 一起置中 */
+    margin-bottom: 30px; /* 跟下面的結果區塊，拉開 30px 的距離 */
+}
+
+/* 選擇 id="results-area" (書櫃) */
+#results-area {
+    display: flex;     /* 這是重點！啟用 Flexbox 佈局 (彈性盒子) */
+    flex-wrap: wrap;   /* 允許換行 (如果書太多，一行放不下就換行) */
+    gap: 20px;         /* 設定書跟書之間的間距 (20px) */
+    justify-content: center; /* 讓所有書本在容器內水平置中 */
+}
+
+/* 選擇 class="book-item" (班級名稱用 . 來選) */
+/* 這就是單一一本書的「卡片」樣式 */
+.book-item {
+    width: 200px; /* 每張卡片的固定寬度 200px */
+    border: 1px solid #ccc; /* 幫卡片加上一個灰色邊框 */
+    border-radius: 8px;     /* 讓邊框變圓角 */
+    padding: 10px;          /* 卡片內的內容不要貼著邊框 */
+    text-align: center;     /* 讓卡片裡的文字 (書名、作者) 置中 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 加上一點點陰影，有立體感 */
 }
