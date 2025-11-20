@@ -4,37 +4,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圖書館系統</title>
+    <title>LibrarySystem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <button id="searchButton">
-        <i class="fas fa-search"></i> 搜尋
-    </button>
 </head>
 
 <body>
-    <header>
-        <h1>圖書館藏書查詢系統</h1>
-    </header>
 
-    <main>
-        <section class="search-section">
-            <input type="text" id="searchInput" placeholder="請輸入書名關鍵字...">
-            <button id="searchButton">搜尋</button>
-        </section>
+    <nav class="top-nav">
+        <div class="nav-left">
+            <h1 class="logo-title" id="logo-btn">Library System</h1>
+        </div>
 
-        <section id="resultsSection" class="results-section">
-        </section>
-    </main>
+        <div class="nav-right">
 
-    <script src="js/main.js"></script>
-
-    <div id="bookModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <div id="modalBookDetails">
+            <div class="dropdown">
+                <a class="dropbtn">館藏查詢 ▾</a>
+                <div class="dropdown-content">
+                    <a id="nav-general">一般查詢</a>
+                    <a id="nav-advanced">進階查詢</a>
+                </div>
             </div>
+
+            <a id="link-popular">熱門圖書</a>
+
+            <div class="dropdown">
+                <a class="dropbtn">我的書房 ▾</a>
+                <div class="dropdown-content">
+                    <a>個人資料</a>
+                    <a>個人紀錄</a>
+                    <a>訊息</a>
+                    <a>個人書籤</a>
+                </div>
+            </div>
+
+            <a>網站說明</a>
+
+            <a id="link-login" class="login-btn">登入</a>
+        </div>
+    </nav>
+
+    <div id="search-hero-section">
+
+        <div class="search-tabs">
+            <div class="tab active" id="tab-general">一般查詢</div>
+            <div class="tab" id="tab-advanced">進階查詢</div>
+        </div>
+
+        <div class="search-box-wrapper">
+
+            <div id="panel-general" class="search-panel">
+                <div class="input-group">
+                    <input type="text" id="search-input" placeholder="輸入書名或關鍵字...">
+                    <button id="search-button">查詢</button>
+                </div>
+            </div>
+
+            <div id="panel-advanced" class="search-panel hidden">
+                <div class="adv-form-grid">
+                    <div class="form-item">
+                        <label>書名</label>
+                        <input type="text" id="adv-title" placeholder="請輸入書名">
+                    </div>
+                    <div class="form-item">
+                        <label>作者</label>
+                        <input type="text" id="adv-author" placeholder="請輸入作者">
+                    </div>
+                    <div class="form-item">
+                        <label>出版社</label>
+                        <input type="text" id="adv-publisher" placeholder="請輸入出版社">
+                    </div>
+                </div>
+                <button id="adv-search-btn">進階搜尋</button>
+            </div>
+
         </div>
     </div>
+
+    <div id="results-area">
+    </div>
+
+    <script src="js/main.js"></script>
 </body>
 
 </html>
