@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <title>熱門圖書 - LibrarySystem</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <nav class="top-nav">
-        <div class="nav-left"><h1 class="logo-title" id="logo-btn">Library System</h1></div>
+        <div class="nav-left">
+            <h1 class="logo-title" id="logo-btn">Library System</h1>
+        </div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
             <a href="popular.html">熱門圖書</a>
-            <div class="dropdown"><a class="dropbtn">我的書房 ▾</a><div class="dropdown-content"><a href="my-library.html" class="auth-link">個人資料</a><a href="my-library.html" class="auth-link">借閱紀錄</a><a href="my-library.html" class="auth-link">訊息</a><a href="my-library.html" class="auth-link">個人書籤</a></div></div>
+
+            <a href="my-library.html" class="auth-link">我的書房</a>
+
             <a href="about.html">網站說明</a>
             <a id="btn-login-trigger" class="login-btn">登入</a>
             <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
@@ -42,4 +48,5 @@
     <div id="toast-container"></div>
     <script src="js/main.js"></script>
 </body>
+
 </html>
