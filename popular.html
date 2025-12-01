@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>熱門圖書 - LibrarySystem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title" id="logo-btn">Library System</h1></div>
+        <div class="nav-right">
+            <a id="nav-home" href="index.html">首頁</a>
+            <a href="popular.html">熱門圖書</a>
+            <div class="dropdown"><a class="dropbtn">我的書房 ▾</a><div class="dropdown-content"><a href="my-library.html" class="auth-link">個人資料</a><a href="my-library.html" class="auth-link">借閱紀錄</a><a href="my-library.html" class="auth-link">訊息</a><a href="my-library.html" class="auth-link">個人書籤</a></div></div>
+            <a href="about.html">網站說明</a>
+            <a id="btn-login-trigger" class="login-btn">登入</a>
+            <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
+            <a id="btn-logout" class="hidden" style="color:#d9534f;">登出</a>
+        </div>
+    </nav>
+    <div style="max-width: 1000px; margin: 40px auto; padding: 20px;">
+        <h2 style="border-left: 5px solid #d9534f; padding-left: 15px; color: #333;">本月熱門借閱排行榜</h2>
+        <div class="book-item" style="display:inline-block; margin:10px;">
+            <img src="https://via.placeholder.com/100x150">
+            <h3>原子習慣</h3>
+            <p>James Clear</p>
+        </div>
+    </div>
+    <div id="modal-login" class="modal hidden">
+        <div class="modal-content login-modal-content">
+            <span class="close-btn login-close">&times;</span>
+            <h2>會員登入</h2>
+            <div class="login-form">
+                <div class="input-group"><input type="text" id="login-user" placeholder="請輸入學號/帳號"></div>
+                <div class="input-group"><input type="password" id="login-pass" placeholder="請輸入密碼"></div>
+                <button id="btn-login-submit">登入</button>
+                <p style="margin-top:15px; font-size:13px; color:#666;">測試帳號：admin / 1234</p>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/main.js"></script>
+</body>
+</html>

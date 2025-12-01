@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>關於本站 - LibrarySystem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .about-container { max-width: 800px; margin: 50px auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .about-title { font-size: 32px; border-bottom: 2px solid #4285f4; padding-bottom: 15px; margin-bottom: 30px; }
+        .about-content p { line-height: 1.8; color: #555; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title" id="logo-btn">Library System</h1></div>
+        <div class="nav-right">
+            <a id="nav-home" href="index.html">首頁</a>
+            <a href="popular.html">熱門圖書</a>
+            <div class="dropdown"><a class="dropbtn">我的書房 ▾</a><div class="dropdown-content"><a href="my-library.html" class="auth-link">個人資料</a><a href="my-library.html" class="auth-link">借閱紀錄</a><a href="my-library.html" class="auth-link">訊息</a><a href="my-library.html" class="auth-link">個人書籤</a></div></div>
+            <a href="about.html">網站說明</a>
+            <a id="btn-login-trigger" class="login-btn">登入</a>
+            <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
+            <a id="btn-logout" class="hidden" style="color:#d9534f;">登出</a>
+        </div>
+    </nav>
+    <div class="about-container">
+        <h2 class="about-title">關於本圖書館系統</h2>
+        <div class="about-content">
+            <p>歡迎使用 Library System！這是一個模擬圖書館藏書查詢系統。</p>
+            <h3>核心功能</h3>
+            <ul>
+                <li>快速搜尋：支援即時關鍵字過濾</li>
+                <li>進階查詢：針對書名、作者、出版社篩選</li>
+                <li>個人書房：管理借閱紀錄與個人資料</li>
+            </ul>
+        </div>
+    </div>
+    <div id="modal-login" class="modal hidden">
+        <div class="modal-content login-modal-content">
+            <span class="close-btn login-close">&times;</span>
+            <h2>會員登入</h2>
+            <div class="login-form">
+                <div class="input-group"><input type="text" id="login-user" placeholder="請輸入學號/帳號"></div>
+                <div class="input-group"><input type="password" id="login-pass" placeholder="請輸入密碼"></div>
+                <button id="btn-login-submit">登入</button>
+                <p style="margin-top:15px; font-size:13px; color:#666;">測試帳號：admin / 1234</p>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/main.js"></script>
+</body>
+</html>

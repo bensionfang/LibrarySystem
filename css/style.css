@@ -4,170 +4,105 @@ body {
     padding: 0;
     font-family: 'Noto Sans TC', sans-serif;
     background-color: #fff;
-    /* 全白背景 */
     color: #333;
 }
 
 /* =========================================
    1. 頂部導覽列 (Top Navigation)
-   使用 W3Schools 邏輯重寫，確保完美對齊
 ========================================= */
-
 .top-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 30px;
     height: 70px;
-    /* 固定高度 */
     background-color: white;
     border-bottom: 1px solid #eee;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
 }
 
-/* 左側 Logo */
 .logo-title {
     font-size: 36px;
-    /* 大字體 */
     font-weight: bold;
     color: #000;
-    /* 黑色 */
     margin: 0;
     cursor: pointer;
-    /* 手指游標 */
 }
 
-/* 右側連結區 */
 .nav-right {
     height: 100%;
     display: flex;
-    /* 讓按鈕橫向排列 */
 }
 
-/* --- 下拉選單與連結樣式 --- */
-
-/* 1. 下拉選單容器 */
+/* 下拉選單容器 */
 .dropdown {
     position: relative;
-    /* 關鍵：定位基準 */
     display: flex;
-    /* 讓裡面的按鈕垂直置中 */
     align-items: center;
     height: 100%;
 }
 
-/* 2. 按鈕樣式 (包含一般連結 .dropbtn) */
-.nav-right>a,
-.dropbtn {
+/* 按鈕樣式 (含一般連結) */
+.nav-right > a, .dropbtn {
     background-color: transparent;
     color: #333;
-
-    /* 關鍵對齊設定：左右內距 20px */
-    padding: 0 20px;
-
+    padding: 0 20px; /* 關鍵：左右內距 */
     font-size: 16px;
     border: none;
     cursor: pointer;
     height: 100%;
-
-    /* 讓文字垂直置中 */
     display: flex;
     align-items: center;
     text-decoration: none;
     white-space: nowrap;
-    /* 不換行 */
 }
 
-/* 3. 下拉選單內容 (盒子) */
+/* 下拉選單內容 (盒子) */
 .dropdown-content {
     display: none;
     position: absolute;
     background-color: white;
-
-    /* 關鍵：讓選單寬度跟按鈕一模一樣 (100%) */
-    min-width: 100%;
-
-    /* 關鍵：緊貼左邊，不要有任何偏移 */
-    left: 0;
-
-    /* 配合導覽列高度，往下推 70px */
+    min-width: 100%; /* 寬度跟按鈕一樣 */
+    left: 0;         /* 靠左對齊 */
     top: 70px;
-
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
     z-index: 2000;
     border-top: 2px solid #4285f4;
-    /* 頂部藍線 */
     border-radius: 0 0 4px 4px;
 }
 
-/* 4. 選單裡的連結 (選項) */
+/* 選單裡的連結 (選項) */
 .dropdown-content a {
     color: black;
-
-    /* 關鍵對齊設定！！這裡的 padding-left 必須跟上面的按鈕 (20px) 一模一樣 */
-    /* 12px 是上下距離，20px 是左右距離 */
-    padding: 12px 20px;
-
+    padding: 12px 20px; /* 關鍵：跟上面按鈕一致 */
     text-decoration: none;
     display: block;
     text-align: left;
-    /* 強制靠左對齊 */
-
-    /* 確保字不會換行 */
     white-space: nowrap;
     font-size: 14px;
     cursor: pointer;
 }
 
-/* --- Hover 互動效果 --- */
-
-/* 滑鼠移過選項變色 */
-.dropdown-content a:hover {
-    background-color: #f1f3f4;
-    color: #4285f4;
-}
-
-/* 滑鼠移過上方按鈕變色 */
-.nav-right>a:hover,
-.dropbtn:hover,
-.dropdown:hover .dropbtn {
-    background-color: #f8f9fa;
-    color: #4285f4;
-}
-
-/* 顯示下拉選單 */
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
+/* Hover 效果 */
+.dropdown-content a:hover { background-color: #f1f3f4; color: #4285f4; }
+.nav-right > a:hover, .dropbtn:hover, .dropdown:hover .dropbtn { background-color: #f8f9fa; color: #4285f4; }
+.dropdown:hover .dropdown-content { display: block; }
 
 /* =========================================
    2. 中間搜尋區塊 (Hero Section)
 ========================================= */
-
 #search-hero-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: 15vh;
-    /* 初始垂直位置 */
     padding: 0 20px;
     transition: margin-top 0.3s ease;
 }
 
-/* 當開始搜尋後，整個區塊往上推 */
-body.searching #search-hero-section {
-    margin-top: 5vh;
-}
+body.searching #search-hero-section { margin-top: 5vh; }
 
-/* --- 頁籤 (Tabs) --- */
-.search-tabs {
-    display: flex;
-    width: 100%;
-    max-width: 600px;
-    gap: 5px;
-}
-
+.search-tabs { display: flex; width: 100%; max-width: 600px; gap: 5px; }
 .tab {
     padding: 10px 20px;
     background-color: #f1f3f4;
@@ -178,167 +113,122 @@ body.searching #search-hero-section {
     font-size: 15px;
     transition: background 0.2s;
 }
+.tab:hover { background-color: #e8eaed; }
+.tab.active { background-color: white; color: #4285f4; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); }
 
-.tab:hover {
-    background-color: #e8eaed;
-}
-
-.tab.active {
-    background-color: white;
-    color: #4285f4;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
-}
-
-/* --- 搜尋內容大盒子 --- */
 .search-box-wrapper {
     width: 100%;
     max-width: 600px;
     background-color: white;
     border-radius: 0 8px 8px 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-
-    /* 這裡改成 10px，讓白邊變窄 */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 10px;
-
     box-sizing: border-box;
 }
 
-/* --- A. 一般查詢面板 --- */
 .input-group {
     display: flex;
     border: 1px solid #dfe1e5;
     border-radius: 4px;
     overflow: hidden;
 }
+.input-group:hover { box-shadow: 0 1px 6px rgba(32,33,36,0.2); border-color: transparent; }
 
-.input-group:hover {
-    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.2);
-    border-color: transparent;
+#search-input { flex-grow: 1; border: none; padding: 15px 20px; font-size: 20px; outline: none; }
+#search-button { background-color: #4285f4; color: white; border: none; padding: 0 30px; font-size: 18px; font-weight: bold; cursor: pointer; }
+#search-button:hover { background-color: #3367d6; }
+
+.adv-form-grid { display: grid; gap: 15px; padding: 10px; }
+.form-item { display: flex; flex-direction: column; gap: 5px; }
+.form-item label { font-size: 14px; color: #666; font-weight: bold; }
+.form-item input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
+#adv-search-btn { width: 100%; margin-top: 10px; padding: 12px; background-color: #34a853; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+
+/* =========================================
+   3. 結果顯示區與書本卡片
+========================================= */
+#results-area { padding: 40px 20px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+
+.book-item {
+    background: white; width: 200px; border: 1px solid #eee; border-radius: 8px; padding: 15px; text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.2s;
+    display: flex; flex-direction: column; /* 讓內容垂直排列 */
+}
+.book-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); } /* 移除 hover 變成 pointer，避免誤觸 */
+.book-item img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; }
+.book-item h3 { font-size: 16px; margin: 10px 0; color: #333; }
+.book-item p { color: #666; font-size: 14px; margin: 5px 0; }
+
+/* --- 書本卡片按鈕區 (New) --- */
+.book-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto; /* 推到最下面 */
+    width: 100%;
 }
 
-#search-input {
-    flex-grow: 1;
-    border: none;
-
-    /* 這裡加大：讓輸入框變高 */
-    padding: 15px 20px;
-    font-size: 20px;
-
-    outline: none;
-}
-
-#search-button {
+/* 借閱按鈕 */
+.btn-borrow {
+    flex: 2; /* 佔比較寬 */
+    padding: 8px;
     background-color: #4285f4;
     color: white;
     border: none;
-
-    /* 這裡加大：讓按鈕變寬 */
-    padding: 0 30px;
-    font-size: 18px;
-    font-weight: bold;
-
+    border-radius: 4px;
     cursor: pointer;
-}
-
-#search-button:hover {
-    background-color: #3367d6;
-}
-
-
-/* --- B. 進階查詢面板 --- */
-.adv-form-grid {
-    display: grid;
-    gap: 15px;
-    padding: 10px;
-    /* 補一點內距給表格 */
-}
-
-.form-item {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.form-item label {
     font-size: 14px;
-    color: #666;
-    font-weight: bold;
+    transition: background 0.2s;
 }
+.btn-borrow:hover { background-color: #3367d6; }
+.btn-borrow.disabled { background-color: #ccc; cursor: default; pointer-events: none; }
 
-.form-item input {
-    padding: 10px;
-    border: 1px solid #ccc;
+/* 書籤按鈕 */
+.btn-bookmark {
+    flex: 1; /* 佔比較窄 */
+    padding: 8px;
+    background-color: white;
+    color: #d9534f;
+    border: 1px solid #d9534f;
     border-radius: 4px;
-    font-size: 15px;
-}
-
-#adv-search-btn {
-    width: 100%;
-    margin-top: 10px;
-    padding: 12px;
-    background-color: #34a853;
-    /* 綠色 */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
     cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
 }
-
-#adv-search-btn:hover {
-    background-color: #2d8e47;
-}
-
+.btn-bookmark:hover { background-color: #fff5f5; }
+.btn-bookmark.active { background-color: #d9534f; color: white; }
 
 /* =========================================
-   3. 結果顯示區 (Results Area)
+   4. 彈出視窗 (Modal)
 ========================================= */
-
-#results-area {
-    padding: 40px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
+.modal {
+    position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;
 }
-
-.book-item {
-    background: white;
-    width: 200px;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
+.modal-content {
+    background-color: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; animation: fadeIn 0.3s;
 }
+.login-modal-content { max-width: 350px; text-align: center; }
+.login-form .input-group { margin-bottom: 15px; border: 1px solid #ccc; }
+.login-form input { width: 100%; padding: 12px; border: none; outline: none; font-size: 16px; }
+#btn-login-submit { width: 100%; padding: 12px; background-color: #4285f4; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+.close-btn { position: absolute; top: 10px; right: 15px; font-size: 28px; cursor: pointer; color: #aaa; }
+.close-btn:hover { color: black; }
+.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
-.book-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
+/* =========================================
+   5. 吐司訊息 (Toast) - 新功能
+========================================= */
+#toast-container {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 5000;
+    display: flex; flex-direction: column; gap: 10px;
 }
-
-.book-item img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin-bottom: 10px;
+.toast {
+    background-color: #333; color: white; padding: 12px 24px; border-radius: 25px;
+    font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0; transform: translateY(20px); transition: all 0.3s ease; display: flex; align-items: center;
 }
-
-.book-item h3 {
-    font-size: 16px;
-    margin: 10px 0;
-    color: #333;
-}
-
-.book-item p {
-    color: #666;
-    font-size: 14px;
-    margin: 5px 0;
-}
-
-/* 通用工具：隱藏 */
-.hidden {
-    display: none !important;
-}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background-color: #34a853; }
+.toast.error { background-color: #d9534f; }
