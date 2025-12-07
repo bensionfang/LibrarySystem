@@ -4,12 +4,9 @@ console.log('Library System 已啟動');
 let isLoggedIn = false;
 
 // --- 1. 資料區 ---
-const allBooks = [
-    { id: 1, title: 'JavaScript 忍者手冊', author: 'John Resig', publisher: '碁峰資訊', image: 'https://via.placeholder.com/100x150' },
-    { id: 2, title: '深入淺出 Python', author: 'Paul Barry', publisher: '歐萊禮', image: 'https://via.placeholder.com/100x150' },
-    { id: 3, title: 'HTML 5 權威指南', author: 'Adam Freeman', publisher: '碁峰資訊', image: 'https://via.placeholder.com/100x150' },
-    { id: 4, title: '原子習慣', author: 'James Clear', publisher: '方智', image: 'https://via.placeholder.com/100x150' }
-];
+// 原本是 const allBooks = [ ...寫死資料... ]
+// 現在改成「由 books.json 動態載入」
+let allBooks = [];
 
 // --- 2. 抓取元素 ---
 const logoBtn = document.getElementById('logo-btn');
@@ -39,9 +36,9 @@ const advAuthor = document.getElementById('adv-author');
 const advPublisher = document.getElementById('adv-publisher');
 const resultsArea = document.getElementById('results-area');
 
-// 書房專用區塊
+// 書房專用區塊（只在 my-library.html 會存在）
 const historyTableBody = document.getElementById('history-table-body');
-const bookmarksContainer = document.getElementById('bookmarks-container'); // 新增
+const bookmarksContainer = document.getElementById('bookmarks-container');
 
 // --- 3. 核心功能函式 ---
 
@@ -75,11 +72,26 @@ function updateUIForLogin(username) {
         userDisplay.textContent = username + " 同學";
     }
     if (btnLogout) btnLogout.classList.remove('hidden');
+
+    // 「我的書房」連結只有登入後才啟用（如果你們有這樣設計）
+    authLinks.forEach(link => {
+        link.classList.remove('disabled');
+    });
+}
+
+function openLoginModal() {
+    if (!modalLogin) return;
+    modalLogin.classList.remove('hidden');
+}
+
+function closeLoginModal() {
+    if (!modalLogin) return;
+    modalLogin.classList.add('hidden');
 }
 
 function performLogin() {
-    const user = loginUser.value;
-    const pass = loginPass.value;
+    const user = loginUser.value.trim();
+    const pass = loginPass.value.trim();
     if (user && pass) {
         isLoggedIn = true;
         showToast('登入成功！歡迎 ' + user, 'success');
@@ -92,10 +104,39 @@ function performLogin() {
 }
 
 function performLogout() {
-    if(confirm('確定要登出嗎？')) {
+    if (confirm('確定要登出嗎？')) {
         localStorage.removeItem('library_user');
+        localStorage.removeItem('library_borrowed');
+        localStorage.removeItem('library_bookmarked');
         isLoggedIn = false;
-        window.location.reload(); 
+        window.location.reload();
+    }
+}
+
+// --- 3-1. 由 books.json 載入館藏資料（★你爬蟲的成果在這裡用到） ---
+async function loadBooks() {
+    try {
+        const res = await fetch('books.json');
+        const data = await res.json();
+
+        // 假設 books.json 來自 books.toscrape.com 爬蟲：
+        // { title, price, availability }
+        // 這裡 mapping 成前端原本使用的格式
+        allBooks = data.map((book, index) => ({
+            id: index + 1,                                   // 建立唯一 ID
+            title: book.title || '未命名書籍',
+            author: book.author || '未知作者',               // 如果之後爬得到作者也可以填進來
+            publisher: book.publisher || '未知出版社',
+            image: 'https://via.placeholder.com/100x150',    // 沒封面先用佔位圖
+            price: book.price || '',
+            availability: book.availability || ''
+        }));
+
+        console.log('成功載入 books.json，共', allBooks.length, '筆書籍');
+        displayBooks(allBooks);
+    } catch (err) {
+        console.error('載入 books.json 失敗：', err);
+        showToast('無法載入館藏資料', 'error');
     }
 }
 
@@ -108,7 +149,7 @@ function borrowBook(bookId) {
     }
 
     let borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
-    
+
     // 再次檢查 (防止重複)
     if (borrowedList.some(book => book.id === bookId)) {
         showToast('您已經借閱過這本書了！', 'error');
@@ -119,21 +160,14 @@ function borrowBook(bookId) {
     if (bookToAdd) {
         const today = new Date().toISOString().split('T')[0];
         const record = { ...bookToAdd, borrowDate: today, status: '借閱中' };
-        
+
         borrowedList.push(record);
         localStorage.setItem('library_borrowed', JSON.stringify(borrowedList));
-        
+
         showToast(`《${bookToAdd.title}》借閱成功！`, 'success');
-        
-        // 重新整理畫面 (讓按鈕變灰)
-        // 這裡我們簡單重新執行上次的搜尋顯示，或是直接刷新當前列表
-        // 為了簡單，我們直接重新呼叫 displayBooks 顯示目前列表
-        // (但在實際專案可能需要只更新該按鈕)
-        // 這裡我們暫時不重新整理搜尋結果，而是手動更新按鈕會比較複雜
-        // 最簡單的方法：重新整理頁面 (或重新觸發搜尋)。
-        // 這裡為了使用者體驗，我們直接修改按鈕樣式 (進階操作)
+
         const btn = document.querySelector(`button[onclick="borrowBook(${bookId})"]`);
-        if(btn) {
+        if (btn) {
             btn.textContent = '已借閱';
             btn.classList.add('disabled');
             btn.removeAttribute('onclick');
@@ -141,7 +175,7 @@ function borrowBook(bookId) {
     }
 }
 
-// 收藏/取消收藏功能 (新功能)
+// 收藏/取消收藏功能
 function toggleBookmark(bookId) {
     if (!isLoggedIn) {
         showToast('請先登入會員才能使用收藏功能！', 'error');
@@ -159,7 +193,7 @@ function toggleBookmark(bookId) {
         if (bookToAdd) {
             bookmarkedList.push(bookToAdd);
             showToast('已加入收藏', 'success');
-            if(btn) {
+            if (btn) {
                 btn.classList.add('active');
                 btn.textContent = '已收藏';
             }
@@ -168,11 +202,11 @@ function toggleBookmark(bookId) {
         // 已經收藏 -> 移除
         bookmarkedList.splice(bookIndex, 1);
         showToast('已取消收藏', 'normal');
-        if(btn) {
+        if (btn) {
             btn.classList.remove('active');
             btn.textContent = '收藏';
         }
-        
+
         // 如果是在書房頁面，要即時移除該卡片
         if (bookmarksContainer) {
             renderLibraryBookmarks();
@@ -204,7 +238,7 @@ function renderLibraryHistory() {
     });
 }
 
-// 渲染「我的書房」收藏列表 (新功能)
+// 渲染「我的書房」收藏列表
 function renderLibraryBookmarks() {
     if (!bookmarksContainer) return;
     const bookmarkedList = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
@@ -238,25 +272,22 @@ function returnBook(bookId) {
     renderLibraryHistory();
 }
 
-// 顯示書本列表 (最重要的更新：判斷按鈕狀態)
+// 顯示書本列表（首頁搜尋結果）
 function displayBooks(booksToShow) {
     if (!resultsArea) return;
     resultsArea.innerHTML = '';
-    if (booksToShow.length === 0) {
+    if (!booksToShow || booksToShow.length === 0) {
         resultsArea.innerHTML = '<p style="color:#666; width:100%; text-align:center;">找不到符合條件的書籍。</p>';
         return;
     }
-
     // 讀取目前的借閱和收藏狀態
     const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
     const bookmarkedList = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
 
     booksToShow.forEach((book) => {
-        // 檢查狀態
         const isBorrowed = borrowedList.some(b => b.id === book.id);
         const isBookmarked = bookmarkedList.some(b => b.id === book.id);
 
-        // 設定按鈕文字與樣式
         const borrowBtnClass = isBorrowed ? 'btn-borrow disabled' : 'btn-borrow';
         const borrowBtnText = isBorrowed ? '已借閱' : '借閱';
         const borrowBtnAction = isBorrowed ? '' : `onclick="borrowBook(${book.id})"`;
@@ -270,7 +301,6 @@ function displayBooks(booksToShow) {
                 <h3>${book.title}</h3>
                 <p>作者: ${book.author}</p>
                 <p style="font-size: 12px; color: #999;">${book.publisher}</p>
-                
                 <div class="book-actions">
                     <button class="${borrowBtnClass}" ${borrowBtnAction}>${borrowBtnText}</button>
                     <button class="${bookmarkBtnClass}" onclick="toggleBookmark(${book.id})">${bookmarkBtnText}</button>
@@ -280,135 +310,127 @@ function displayBooks(booksToShow) {
     });
 }
 
+// 切換一般 / 進階查詢 tab
 function switchTab(mode) {
+    if (!tabGeneral || !tabAdvanced || !panelGeneral || !panelAdvanced) return;
+
     if (mode === 'general') {
-        tabGeneral?.classList.add('active');
-        tabAdvanced?.classList.remove('active');
-        panelGeneral?.classList.remove('hidden');
-        panelAdvanced?.classList.add('hidden');
+        tabGeneral.classList.add('active');
+        tabAdvanced.classList.remove('active');
+        panelGeneral.classList.remove('hidden');
+        panelAdvanced.classList.add('hidden');
     } else if (mode === 'advanced') {
-        tabAdvanced?.classList.add('active');
-        tabGeneral?.classList.remove('active');
-        panelAdvanced?.classList.remove('hidden');
-        panelGeneral?.classList.add('hidden');
+        tabAdvanced.classList.add('active');
+        tabGeneral.classList.remove('active');
+        panelAdvanced.classList.remove('hidden');
+        panelGeneral.classList.add('hidden');
     }
 }
 
-function resetHome() {
-    if (!document.getElementById('search-hero-section')) {
-        window.location.href = 'index.html';
+// 一般搜尋（書名 / 關鍵字）
+function handleGeneralSearch() {
+    if (!searchInput) return;
+    const keyword = searchInput.value.trim().toLowerCase();
+    if (!keyword) {
+        displayBooks(allBooks);
         return;
     }
-    document.body.classList.remove('searching');
-    if (searchInput) searchInput.value = '';
-    if (advTitle) advTitle.value = '';
-    switchTab('general');
-    displayBooks(allBooks);
-}
-
-function openLoginModal() { modalLogin?.classList.remove('hidden'); }
-function closeLoginModal() { modalLogin?.classList.add('hidden'); }
-
-// --- 4. 事件監聽 ---
-logoBtn?.addEventListener('click', resetHome);
-navHome?.addEventListener('click', (e) => {
-    if (document.getElementById('search-hero-section')) {
-        e.preventDefault();
-        resetHome();
-    }
-});
-
-authLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        if (!isLoggedIn) {
-            e.preventDefault();
-            showToast('請先登入會員', 'error');
-            openLoginModal();
-        }
-    });
-});
-
-btnLoginTrigger?.addEventListener('click', openLoginModal);
-closeLoginBtn?.addEventListener('click', closeLoginModal);
-btnLoginSubmit?.addEventListener('click', performLogin);
-btnLogout?.addEventListener('click', performLogout);
-window.addEventListener('click', (e) => { if (e.target === modalLogin) closeLoginModal(); });
-tabGeneral?.addEventListener('click', () => switchTab('general'));
-tabAdvanced?.addEventListener('click', () => switchTab('advanced'));
-
-searchButton?.addEventListener('click', () => {
-    const query = searchInput.value.toLowerCase().trim();
-    const filteredBooks = allBooks.filter(book => book.title.toLowerCase().includes(query));
-    document.body.classList.add('searching');
-    displayBooks(filteredBooks);
-});
-
-advSearchBtn?.addEventListener('click', () => {
-    const tVal = advTitle.value.trim().toLowerCase();
-    const aVal = advAuthor.value.trim().toLowerCase();
-    const pVal = advPublisher.value.trim().toLowerCase();
-    const filteredBooks = allBooks.filter(book => {
-        const matchTitle = tVal ? book.title.toLowerCase().includes(tVal) : true;
-        const matchAuthor = aVal ? book.author.toLowerCase().includes(aVal) : true;
-        const matchPublisher = pVal ? book.publisher.toLowerCase().includes(pVal) : true;
-        return matchTitle && matchAuthor && matchPublisher;
-    });
-    document.body.classList.add('searching');
-    displayBooks(filteredBooks);
-});
-
-// --- 初始化 ---
-checkLoginStatus();
-displayBooks(allBooks);
-renderLibraryHistory();
-renderLibraryBookmarks(); // 初始化書籤列表
-
-et allBooks = [];
-
-// 1. 讀取 books.json
-async function loadBooks() {
-  try {
-    const response = await fetch("books.json");
-    allBooks = await response.json();
-    renderBooks(allBooks); 
-  } catch (error) {
-    console.error("無法載入 books.json:", error);
-  }
-}
-
-// 2. 把書本顯示在 HTML（你們前端原本就有列表區塊）
-function renderBooks(books) {
-  const list = document.getElementById("book-list");
-  list.innerHTML = ""; 
-
-  books.forEach(book => {
-    const item = document.createElement("div");
-    item.className = "book-item";
-
-    item.innerHTML = `
-      <h3>${book.title}</h3>
-      <p>價格：${book.price}</p>
-      <p>庫存狀態：${book.availability || "不明"}</p>
-    `;
-
-    list.appendChild(item);
-  });
-}
-
-// 3. 搜尋功能整合
-function setupSearch() {
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", () => {
-    const keyword = searchInput.value.toLowerCase();
     const filtered = allBooks.filter(book =>
-      book.title.toLowerCase().includes(keyword)
+        (book.title || '').toLowerCase().includes(keyword)
     );
-    renderBooks(filtered);
-  });
+    displayBooks(filtered);
 }
 
-// 4. 載入時執行
-window.addEventListener("DOMContentLoaded", () => {
-  loadBooks();
-  setupSearch();
+// 進階搜尋（書名 + 作者 + 出版社）
+function handleAdvancedSearch() {
+    if (!advTitle || !advAuthor || !advPublisher) return;
+
+    const t = advTitle.value.trim().toLowerCase();
+    const a = advAuthor.value.trim().toLowerCase();
+    const p = advPublisher.value.trim().toLowerCase();
+
+    const filtered = allBooks.filter(book => {
+        const title = (book.title || '').toLowerCase();
+        const author = (book.author || '').toLowerCase();
+        const publisher = (book.publisher || '').toLowerCase();
+
+        return (
+            (!t || title.includes(t)) &&
+            (!a || author.includes(a)) &&
+            (!p || publisher.includes(p))
+        );
+    });
+
+    displayBooks(filtered);
+}
+
+// --- 4. 事件綁定 ---
+function setupEventListeners() {
+    // Logo / 首頁
+    if (logoBtn) {
+        logoBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
+    if (navHome) {
+        navHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        });
+    }
+
+    // 登入相關
+    if (btnLoginTrigger) {
+        btnLoginTrigger.addEventListener('click', openLoginModal);
+    }
+    if (closeLoginBtn) {
+        closeLoginBtn.addEventListener('click', closeLoginModal);
+    }
+    if (btnLoginSubmit) {
+        btnLoginSubmit.addEventListener('click', performLogin);
+    }
+    if (btnLogout) {
+        btnLogout.addEventListener('click', performLogout);
+    }
+
+    // Tab 切換
+    if (tabGeneral) {
+        tabGeneral.addEventListener('click', () => switchTab('general'));
+    }
+    if (tabAdvanced) {
+        tabAdvanced.addEventListener('click', () => switchTab('advanced'));
+    }
+
+    // 一般搜尋
+    if (searchButton && searchInput) {
+        searchButton.addEventListener('click', handleGeneralSearch);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleGeneralSearch();
+        });
+    }
+
+    // 進階搜尋
+    if (advSearchBtn) {
+        advSearchBtn.addEventListener('click', handleAdvancedSearch);
+    }
+}
+
+// --- 5. 初始化 ---
+window.addEventListener('DOMContentLoaded', () => {
+    checkLoginStatus();
+    setupEventListeners();
+    switchTab('general');
+
+    // 首頁：載入 books.json 後顯示館藏
+    if (resultsArea) {
+        loadBooks();
+    }
+
+    // 我的書房頁面：渲染借閱紀錄 / 收藏
+    if (historyTableBody) {
+        renderLibraryHistory();
+    }
+    if (bookmarksContainer) {
+        renderLibraryBookmarks();
+    }
 });
