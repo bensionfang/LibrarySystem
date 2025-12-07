@@ -362,3 +362,53 @@ checkLoginStatus();
 displayBooks(allBooks);
 renderLibraryHistory();
 renderLibraryBookmarks(); // 初始化書籤列表
+
+et allBooks = [];
+
+// 1. 讀取 books.json
+async function loadBooks() {
+  try {
+    const response = await fetch("books.json");
+    allBooks = await response.json();
+    renderBooks(allBooks); 
+  } catch (error) {
+    console.error("無法載入 books.json:", error);
+  }
+}
+
+// 2. 把書本顯示在 HTML（你們前端原本就有列表區塊）
+function renderBooks(books) {
+  const list = document.getElementById("book-list");
+  list.innerHTML = ""; 
+
+  books.forEach(book => {
+    const item = document.createElement("div");
+    item.className = "book-item";
+
+    item.innerHTML = `
+      <h3>${book.title}</h3>
+      <p>價格：${book.price}</p>
+      <p>庫存狀態：${book.availability || "不明"}</p>
+    `;
+
+    list.appendChild(item);
+  });
+}
+
+// 3. 搜尋功能整合
+function setupSearch() {
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", () => {
+    const keyword = searchInput.value.toLowerCase();
+    const filtered = allBooks.filter(book =>
+      book.title.toLowerCase().includes(keyword)
+    );
+    renderBooks(filtered);
+  });
+}
+
+// 4. 載入時執行
+window.addEventListener("DOMContentLoaded", () => {
+  loadBooks();
+  setupSearch();
+});
