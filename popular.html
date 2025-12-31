@@ -1,40 +1,94 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
     <title>熱門圖書 - LibrarySystem</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
     <nav class="top-nav">
-        <div class="nav-left">
-            <h1 class="logo-title" id="logo-btn">Library System</h1>
-        </div>
+        <div class="nav-left"><h1 class="logo-title" id="logo-btn">Library System</h1></div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
             <a href="popular.html">熱門圖書</a>
-
             <a href="my-library.html" class="auth-link">我的書房</a>
-
             <a href="about.html">網站說明</a>
             <a id="btn-login-trigger" class="login-btn">登入</a>
             <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
             <a id="btn-logout" class="hidden" style="color:#d9534f;">登出</a>
         </div>
     </nav>
+
     <div style="max-width: 1000px; margin: 40px auto; padding: 20px;">
-        <h2 style="border-left: 5px solid #d9534f; padding-left: 15px; color: #333;">本月熱門借閱排行榜</h2>
-        <div class="book-item" style="display:inline-block; margin:10px;">
-            <img src="https://via.placeholder.com/100x150">
-            <h3>原子習慣</h3>
-            <p>James Clear</p>
+        <h2 style="border-left: 5px solid #d9534f; padding-left: 15px; color: #333;">🔥 本月熱門借閱排行榜</h2>
+        
+        <div id="popular-books-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
+            <p style="color:#666;">正在讀取熱門數據...</p>
         </div>
     </div>
+
     <div id="modal-login" class="modal hidden">
         <div class="modal-content login-modal-content">
+            <span class="close-btn login-close">&times;</span>
+            <h2>會員登入</h2>
+            <div class="login-form">
+                <div class="input-group"><input type="text" id="login-user" placeholder="請輸入學號/帳號"></div>
+                <div class="input-group"><input type="password" id="login-pass" placeholder="請輸入密碼"></div>
+                <button id="btn-login-submit">登入</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+
+    <script type="module" src="js/main.js"></script>
+    
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, getDocs, limit, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const container = document.getElementById('popular-books-container');
+
+        async function loadPopularBooks() {
+            try {
+                // 這裡我們抓取資料庫裡的前 5 本書當作熱門書
+                const q = query(collection(db, "books"), limit(5));
+                const querySnapshot = await getDocs(q);
+                
+                container.innerHTML = ''; // 清空載入中文字
+
+                if (querySnapshot.empty) {
+                    container.innerHTML = '<p>目前沒有熱門書籍。</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const book = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-item';
+                    div.style.margin = '10px';
+                    
+                    // 使用 window.borrowBook 功能
+                    div.innerHTML = `
+                        <img src="${book.image}" alt="${book.title}" style="width:100%; border-radius:4px;">
+                        <h3 style="font-size:16px; margin:10px 0;">${book.title}</h3>
+                        <p style="color:#666; font-size:14px;">${book.author}</p>
+                        <div class="book-actions">
+                             <button class="btn-borrow" onclick="window.borrowBook('${doc.id}')">借閱</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<p>無法載入熱門書籍。</p>';
+            }
+        }
+        
+        loadPopularBooks();
+    </script>
+</body>
+</html>        <div class="modal-content login-modal-content">
             <span class="close-btn login-close">&times;</span>
             <h2>會員登入</h2>
             <div class="login-form">
