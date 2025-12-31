@@ -47,6 +47,1104 @@
         <h2>📚 手動新增書籍</h2>
         <div class="form-card">
             <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>圖書館後台管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-card { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+            border-top: 5px solid #28a745; 
+        }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        
+        /* 按鈕與列表樣式 */
+        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #218838; }
+        .btn-upload { background: #007bff; margin-top: 10px; } 
+        .btn-upload:hover { background: #0069d9; }
+        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+        .book-list-item img { width: 50px; height: auto; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-right">
+            <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>圖書館後台管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-card { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+            border-top: 5px solid #28a745; 
+        }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        
+        /* 按鈕與列表樣式 */
+        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #218838; }
+        .btn-upload { background: #007bff; margin-top: 10px; } 
+        .btn-upload:hover { background: #0069d9; }
+        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+        .book-list-item img { width: 50px; height: auto; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-right">
+            <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>圖書館後台管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-card { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+            border-top: 5px solid #28a745; 
+        }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        
+        /* 按鈕與列表樣式 */
+        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #218838; }
+        .btn-upload { background: #007bff; margin-top: 10px; } 
+        .btn-upload:hover { background: #0069d9; }
+        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+        .book-list-item img { width: 50px; height: auto; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-right">
+            <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>圖書館後台管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-card { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+            border-top: 5px solid #28a745; 
+        }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        
+        /* 按鈕與列表樣式 */
+        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #218838; }
+        .btn-upload { background: #007bff; margin-top: 10px; } 
+        .btn-upload:hover { background: #0069d9; }
+        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+        .book-list-item img { width: 50px; height: auto; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-right">
+            <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>圖書館後台管理系統</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-card { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+            border-top: 5px solid #28a745; 
+        }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        
+        /* 按鈕與列表樣式 */
+        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-add:hover { background: #218838; }
+        .btn-upload { background: #007bff; margin-top: 10px; } 
+        .btn-upload:hover { background: #0069d9; }
+        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
+        .book-list-item img { width: 50px; height: auto; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-right">
+            <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="input-title" placeholder="書名 (必填)">
+                <input type="text" id="input-author" placeholder="作者 (必填)">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-publisher" placeholder="出版社">
+                <input type="text" id="input-price" placeholder="價格">
+            </div>
+            <div class="form-row">
+                <input type="text" id="input-image" placeholder="圖片檔名 (例如: 978986xxx.jpg)">
+                <input type="text" id="input-isbn" placeholder="ISBN (選填)">
+            </div>
+            <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
+        </div>
+
+        <h2>📖 資料庫庫存列表</h2>
+        <div id="admin-book-list" style="background:white; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <p style="padding:20px; color:#666;">載入中...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const bookListEl = document.getElementById('admin-book-list');
+        const btnAdd = document.getElementById('btn-add-book');
+        const btnBulkUpload = document.getElementById('btn-bulk-upload');
+        const fileInput = document.getElementById('json-file-input');
+        const statusText = document.getElementById('upload-status');
+
+        // 1. 監聽書籍列表 (即時更新)
+        function loadAdminBooks() {
+            const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
+            onSnapshot(q, (querySnapshot) => {
+                bookListEl.innerHTML = '';
+                if (querySnapshot.empty) {
+                    bookListEl.innerHTML = '<p style="padding:20px;">資料庫是空的。</p>';
+                    return;
+                }
+                querySnapshot.forEach((docSnap) => {
+                    const book = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = 'book-list-item';
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <img src="${book.image || 'https://via.placeholder.com/50'}" alt="cover">
+                            <div>
+                                <strong style="font-size:16px;">${book.title}</strong>
+                                <br><span style="color:#666; font-size:13px;">${book.author} | $${book.price} | ISBN: ${book.isbn || '無'}</span>
+                            </div>
+                        </div>
+                        <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
+                    `;
+                    bookListEl.appendChild(div);
+                });
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+            });
+        }
+
+        // 2. 批次匯入功能
+        btnBulkUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) { alert("請先選擇 JSON 檔案！"); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const booksData = JSON.parse(e.target.result);
+                    statusText.textContent = `讀取成功，準備匯入 ${booksData.length} 本書...`;
+                    let count = 0;
+                    for (const book of booksData) {
+                        await addDoc(collection(db, "books"), {
+                            title: book.title,
+                            author: book.author || '未知作者',
+                            publisher: '天瓏書局',
+                            price: book.price,
+                            isbn: book.isbn,
+                            image: book.image_filename ? `./images/${book.image_filename}` : 'https://via.placeholder.com/150',
+                            availability: 'In Stock',
+                            createdAt: new Date()
+                        });
+                        count++;
+                        statusText.textContent = `進度：已匯入 ${count} / ${booksData.length} 本...`;
+                    }
+                    statusText.textContent = `✅ 全數匯入完成！`;
+                    statusText.style.color = "green";
+                } catch (err) {
+                    console.error(err);
+                    alert("匯入失敗，請檢查 JSON 格式");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 3. 手動新增功能 (修正版：支援圖片)
+        async function addBook() {
+            const title = document.getElementById('input-title').value.trim();
+            const author = document.getElementById('input-author').value.trim();
+            const publisher = document.getElementById('input-publisher').value.trim();
+            const price = document.getElementById('input-price').value.trim();
+            
+            // 抓取圖片檔名與 ISBN
+            const imageFile = document.getElementById('input-image').value.trim();
+            const isbn = document.getElementById('input-isbn').value.trim();
+
+            if(!title || !author) { alert("書名與作者是必填的！"); return; }
+
+            // 如果有填檔名，路徑設為 ./images/檔名，否則用假圖
+            const imagePath = imageFile ? `./images/${imageFile}` : 'https://via.placeholder.com/150';
+
+            try {
+                btnAdd.disabled = true;
+                btnAdd.textContent = "新增中...";
+                await addDoc(collection(db, "books"), {
+                    title, author, publisher, price, isbn,
+                    image: imagePath, 
+                    availability: 'In Stock',
+                    createdAt: new Date()
+                });
+                alert("✅ 新增成功！");
+                document.querySelectorAll('input').forEach(i => i.value = '');
+            } catch(e) {
+                console.error(e);
+                alert("新增失敗");
+            } finally {
+                btnAdd.textContent = "＋ 確認新增書籍";
+                btnAdd.disabled = false;
+            }
+        }
+
+        // 4. 刪除功能
+        async function deleteBook(e) {
+            const id = e.target.getAttribute('data-id');
+            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", id));
+        }
+
+        btnAdd.addEventListener('click', addBook);
+        loadAdminBooks();
+    </script>
+</body>
+</html>
+    <div class="admin-container">
+        <h2>🚀 批次匯入書籍 (JSON)</h2>
+        <div class="form-card" style="border-top-color: #007bff;">
+            <p>請選擇爬蟲產生的 <code>books_data.json</code> 檔案：</p>
+            <input type="file" id="json-file-input" accept=".json">
+            <button class="btn-add btn-upload" id="btn-bulk-upload">開始批次匯入</button>
+            <p id="upload-status" style="margin-top:10px; color:#666;"></p>
+        </div>
+
+        <h2>📚 手動新增書籍</h2>
+        <div class="form-card">
+            <div class="form-row">
                 <input type="text" id="input-title" placeholder="書名">
                 <input type="text" id="input-author" placeholder="作者">
             </div>
