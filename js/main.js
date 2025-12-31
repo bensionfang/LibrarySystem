@@ -1,40 +1,247 @@
 // js/main.js
 
-// ★★★ 1. 新增：引入 Firebase 設定與工具 ★★★
+// 1. 引入 Firebase
 import { db } from './firebase-config.js';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-console.log('Library System 已啟動 (Firebase Mode)');
+console.log('Library System 啟動中 (Firebase Mode)...');
 
-// --- 0. 全域狀態 ---
+// --- 全域變數 ---
 let isLoggedIn = false;
-let allBooks = [];
+let allBooks = []; // 這是關鍵！搜尋功能就是搜尋這個陣列
 
-// --- 2. 抓取元素 (維持不變) ---
-const logoBtn = document.getElementById('logo-btn');
-const navHome = document.getElementById('nav-home');
-const btnLoginTrigger = document.getElementById('btn-login-trigger');
-const btnLogout = document.getElementById('btn-logout');
-const modalLogin = document.getElementById('modal-login');
-const btnLoginSubmit = document.getElementById('btn-login-submit');
-const closeLoginBtn = document.querySelector('.login-close');
-const userDisplay = document.getElementById('user-display');
-const authLinks = document.querySelectorAll('.auth-link');
-const loginUser = document.getElementById('login-user');
-const loginPass = document.getElementById('login-pass');
-const tabGeneral = document.getElementById('tab-general');
-const tabAdvanced = document.getElementById('tab-advanced');
-const panelGeneral = document.getElementById('panel-general');
-const panelAdvanced = document.getElementById('panel-advanced');
+// --- DOM 元素 ---
 const searchInput = document.getElementById('search-input');
 const searchButton = document.getElementById('search-button');
+const resultsArea = document.getElementById('results-area');
+// 進階搜尋元素
 const advSearchBtn = document.getElementById('adv-search-btn');
 const advTitle = document.getElementById('adv-title');
 const advAuthor = document.getElementById('adv-author');
 const advPublisher = document.getElementById('adv-publisher');
-const resultsArea = document.getElementById('results-area');
-const historyTableBody = document.getElementById('history-table-body');
-const bookmarksContainer = document.getElementById('bookmarks-container');
+// 登入相關
+const btnLoginTrigger = document.getElementById('btn-login-trigger');
+const modalLogin = document.getElementById('modal-login');
+const closeLoginBtn = document.querySelector('.login-close');
+const btnLoginSubmit = document.getElementById('btn-login-submit');
+const btnLogout = document.getElementById('btn-logout');
+const userDisplay = document.getElementById('user-display');
+const loginUser = document.getElementById('login-user');
+const loginPass = document.getElementById('login-pass');
+// Tab 切換
+const tabGeneral = document.getElementById('tab-general');
+const tabAdvanced = document.getElementById('tab-advanced');
+const panelGeneral = document.getElementById('panel-general');
+const panelAdvanced = document.getElementById('panel-advanced');
+
+// --- 1. 核心功能：從 Firebase 載入書籍 ---
+window.loadBooks = async function() {
+    if (!resultsArea) return; // 如果不在首頁就不用載入
+    
+    resultsArea.innerHTML = '<p style="text-align:center; padding:20px;">正在連線雲端資料庫...</p>';
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "books"));
+        allBooks = []; // 清空舊資料
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            allBooks.push({
+                id: doc.id,
+                title: data.title || '無標題',
+                author: data.author || '未知作者',
+                publisher: data.publisher || '',
+                // 確保圖片路徑正確，如果沒有就用預設圖
+                image: data.image || 'https://via.placeholder.com/150',
+                price: data.price || 0,
+                isbn: data.isbn || ''
+            });
+        });
+
+        console.log(`成功載入 ${allBooks.length} 本書籍`);
+        displayBooks(allBooks); // 載入完成後直接顯示全部
+
+    } catch (error) {
+        console.error("Firebase 連線失敗:", error);
+        resultsArea.innerHTML = '<p style="color:red; text-align:center;">連線失敗，請檢查 firebase-config.js 設定。</p>';
+    }
+}
+
+// --- 2. 顯示書籍 (渲染畫面) ---
+function displayBooks(books) {
+    if (!resultsArea) return;
+    resultsArea.innerHTML = ''; // 清空目前的畫面
+
+    if (books.length === 0) {
+        resultsArea.innerHTML = '<p style="text-align:center; color:#666;">找不到符合的書籍。</p>';
+        return;
+    }
+
+    books.forEach(book => {
+        // 判斷是否已借閱 (從 LocalStorage 讀取)
+        const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+        const isBorrowed = borrowedList.some(b => b.id === book.id);
+
+        // 建立書籍卡片 HTML
+        const div = document.createElement('div');
+        div.className = 'book-item';
+        div.innerHTML = `
+            <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/150'">
+            <h3>${book.title}</h3>
+            <p>作者：${book.author}</p>
+            <p style="font-size:12px; color:#999;">ISBN: ${book.isbn}</p>
+            <div class="book-actions">
+                <button class="${isBorrowed ? 'btn-borrow disabled' : 'btn-borrow'}" 
+                    onclick="window.borrowBook('${book.id}')">
+                    ${isBorrowed ? '已借閱' : '借閱'}
+                </button>
+            </div>
+        `;
+        resultsArea.appendChild(div);
+    });
+}
+
+// --- 3. 搜尋功能 (修復重點) ---
+function handleGeneralSearch() {
+    const keyword = searchInput.value.trim().toLowerCase();
+    console.log("搜尋關鍵字:", keyword);
+
+    if (!keyword) {
+        displayBooks(allBooks); // 沒輸入就顯示全部
+        return;
+    }
+
+    // 篩選 allBooks 陣列
+    const filtered = allBooks.filter(book => {
+        const title = (book.title || '').toLowerCase();
+        const author = (book.author || '').toLowerCase();
+        const isbn = (book.isbn || '').toString();
+        // 只要書名、作者或 ISBN 包含關鍵字就算符合
+        return title.includes(keyword) || author.includes(keyword) || isbn.includes(keyword);
+    });
+
+    displayBooks(filtered);
+}
+
+function handleAdvancedSearch() {
+    const t = advTitle.value.trim().toLowerCase();
+    const a = advAuthor.value.trim().toLowerCase();
+    const p = advPublisher.value.trim().toLowerCase();
+
+    const filtered = allBooks.filter(book => {
+        const title = (book.title || '').toLowerCase();
+        const author = (book.author || '').toLowerCase();
+        const publisher = (book.publisher || '').toLowerCase();
+        
+        return (!t || title.includes(t)) && 
+               (!a || author.includes(a)) && 
+               (!p || publisher.includes(p));
+    });
+
+    displayBooks(filtered);
+}
+
+// --- 4. 借閱與登入功能 (掛載到 window 以便 HTML onclick 呼叫) ---
+window.borrowBook = function(bookId) {
+    if (!isLoggedIn) {
+        alert('請先登入！(測試帳號: admin / 密碼: 1234)');
+        if(modalLogin) modalLogin.classList.remove('hidden');
+        return;
+    }
+    
+    // 檢查是否借過
+    let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+    if (list.some(b => b.id === bookId)) {
+        alert('這本書已經在您的借閱清單中了！');
+        return;
+    }
+
+    // 找到這本書的資料
+    const targetBook = allBooks.find(b => b.id === bookId);
+    if (targetBook) {
+        targetBook.borrowDate = new Date().toISOString().split('T')[0];
+        targetBook.status = '借閱中';
+        list.push(targetBook);
+        localStorage.setItem('library_borrowed', JSON.stringify(list));
+        alert(`成功借閱：${targetBook.title}`);
+        displayBooks(allBooks); // 重新整理按鈕狀態
+    }
+}
+
+// 登入邏輯
+window.performLogin = function() {
+    const u = loginUser.value;
+    const p = loginPass.value;
+    if (u && p) {
+        isLoggedIn = true;
+        localStorage.setItem('library_user', u);
+        checkLoginStatus();
+        if(modalLogin) modalLogin.classList.add('hidden');
+        alert("登入成功！");
+    } else {
+        alert("請輸入帳號密碼");
+    }
+}
+
+window.performLogout = function() {
+    localStorage.removeItem('library_user');
+    isLoggedIn = false;
+    window.location.reload();
+}
+
+function checkLoginStatus() {
+    const u = localStorage.getItem('library_user');
+    if (u) {
+        isLoggedIn = true;
+        if(userDisplay) {
+            userDisplay.textContent = u + " 您好";
+            userDisplay.classList.remove('hidden');
+        }
+        if(btnLoginTrigger) btnLoginTrigger.classList.add('hidden');
+        if(btnLogout) btnLogout.classList.remove('hidden');
+    }
+}
+
+// --- 5. 事件監聽 (初始化) ---
+window.addEventListener('DOMContentLoaded', () => {
+    checkLoginStatus();
+    loadBooks(); // 程式一開始就去抓資料
+
+    // 綁定搜尋按鈕事件
+    if (searchButton) {
+        searchButton.addEventListener('click', handleGeneralSearch);
+    }
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleGeneralSearch();
+        });
+    }
+    if (advSearchBtn) {
+        advSearchBtn.addEventListener('click', handleAdvancedSearch);
+    }
+
+    // 綁定 Tab 切換
+    if(tabGeneral && tabAdvanced) {
+        tabGeneral.addEventListener('click', () => {
+            tabGeneral.classList.add('active');
+            tabAdvanced.classList.remove('active');
+            panelGeneral.classList.remove('hidden');
+            panelAdvanced.classList.add('hidden');
+        });
+        tabAdvanced.addEventListener('click', () => {
+            tabAdvanced.classList.add('active');
+            tabGeneral.classList.remove('active');
+            panelAdvanced.classList.remove('hidden');
+            panelGeneral.classList.add('hidden');
+        });
+    }
+
+    // 綁定登入視窗開關
+    if(btnLoginTrigger) btnLoginTrigger.addEventListener('click', () => modalLogin.classList.remove('hidden'));
+    if(closeLoginBtn) closeLoginBtn.addEventListener('click', () => modalLogin.classList.add('hidden'));
+    if(btnLoginSubmit) btnLoginSubmit.addEventListener('click', window.performLogin);
+    if(btnLogout) btnLogout.addEventListener('click', window.performLogout);
+});const bookmarksContainer = document.getElementById('bookmarks-container');
 
 // --- 3. 核心功能函式 ---
 
