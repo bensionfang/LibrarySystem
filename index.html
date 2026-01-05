@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,10 +16,9 @@
         </div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
-            <a href="popular.html">熱門圖書</a>
-            <a href="my-library.html" class="auth-link">我的書房</a>
+            <a href="popular.html">推薦書籍</a> <a href="my-library.html" class="auth-link">我的書房</a>
             <a href="about.html">網站說明</a>
-            
+
             <a id="btn-login-trigger" class="login-btn">登入</a>
             <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
             <a id="btn-logout" class="hidden" style="color:#d9534f;">登出</a>
@@ -52,15 +52,29 @@
                 <div class="adv-form-grid">
                     <div class="form-item">
                         <label>書名</label>
-                        <input type="text" id="adv-title" placeholder="例如：原子習慣">
+                        <input type="text" id="adv-title">
                     </div>
                     <div class="form-item">
                         <label>作者</label>
-                        <input type="text" id="adv-author" placeholder="例如：James Clear">
+                        <input type="text" id="adv-author">
                     </div>
                     <div class="form-item">
                         <label>出版社</label>
-                        <input type="text" id="adv-publisher" placeholder="例如：方智">
+                        <input type="text" id="adv-publisher">
+                    </div>
+                    <div class="form-item">
+                        <label>ISBN</label>
+                        <input type="text" id="adv-isbn">
+                    </div>
+                    <div class="form-item">
+                        <label>價格</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="adv-price" style="flex: 1;">
+                            <div class="price-toggle-group">
+                                <button type="button" id="btn-price-above" class="btn-toggle">以上</button>
+                                <button type="button" id="btn-price-below" class="btn-toggle active">以下</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button id="adv-search-btn">進階搜尋</button>
@@ -91,4 +105,5 @@
 
     <script type="module" src="js/main.js"></script>
 </body>
+
 </html>

@@ -1,17 +1,34 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
-    <title>熱門圖書 - LibrarySystem</title>
+    <title>推薦書籍 - LibrarySystem</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        #popular-books-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            #popular-books-container {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+    </style>
 </head>
+
 <body>
     <nav class="top-nav">
-        <div class="nav-left"><h1 class="logo-title" id="logo-btn">Library System</h1></div>
+        <div class="nav-left">
+            <h1 class="logo-title" id="logo-btn">Library System</h1>
+        </div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
-            <a href="popular.html">熱門圖書</a>
+            <a href="popular.html">推薦書籍</a>
             <a href="my-library.html" class="auth-link">我的書房</a>
             <a href="about.html">網站說明</a>
             <a id="btn-login-trigger" class="login-btn">登入</a>
@@ -20,10 +37,10 @@
         </div>
     </nav>
 
-    <div style="max-width: 1000px; margin: 40px auto; padding: 20px;">
-        <h2 style="border-left: 5px solid #d9534f; padding-left: 15px; color: #333;">🔥 本月熱門借閱排行榜</h2>
-        <div id="popular-books-container" style="display: flex; flex-wrap: wrap; gap: 20px;">
-            <p style="color:#666;">正在讀取熱門數據...</p>
+    <div style="max-width: 1200px; margin: 40px auto; padding: 20px;">
+        <h2 style="border-left: 5px solid #d9534f; padding-left: 15px; color: #333;">🎲 推薦書籍 (隨機挑選)</h2>
+        <div id="popular-books-container">
+            <p style="color:#666;">正在讀取推薦數據...</p>
         </div>
     </div>
 
@@ -39,54 +56,77 @@
             </div>
         </div>
     </div>
-
     <div id="toast-container"></div>
 
     <script type="module" src="js/main.js"></script>
-    
+
     <script type="module">
         import { db } from './js/firebase-config.js';
-        import { collection, getDocs, limit, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const container = document.getElementById('popular-books-container');
 
-        async function loadPopularBooks() {
+        async function loadRecommendedBooks() {
             try {
-                // 這裡我們抓取資料庫裡的前 5 本書當作熱門書
-                const q = query(collection(db, "books"), limit(5));
-                const querySnapshot = await getDocs(q);
-                
-                container.innerHTML = ''; // 清空載入中文字
+                const querySnapshot = await getDocs(collection(db, "books"));
+                let allBooks = [];
 
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p>目前沒有熱門書籍。</p>';
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let cleanAuthor = data.author || '未知作者';
+                    if (cleanAuthor === '[') cleanAuthor = '未知作者';
+
+                    allBooks.push({ id: doc.id, ...data, author: cleanAuthor });
+                });
+
+                container.innerHTML = '';
+                if (allBooks.length === 0) {
+                    container.innerHTML = '<p>目前沒有書籍。</p>';
                     return;
                 }
 
-                querySnapshot.forEach((doc) => {
-                    const book = doc.data();
+                // 隨機打亂
+                for (let i = allBooks.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allBooks[i], allBooks[j]] = [allBooks[j], allBooks[i]];
+                }
+                const randomBooks = allBooks.slice(0, 5);
+
+                randomBooks.forEach((book) => {
                     const div = document.createElement('div');
                     div.className = 'book-item';
-                    div.style.margin = '10px';
-                    
-                    // 使用 window.borrowBook 功能
+                    div.style.display = 'flex';
+                    div.style.flexDirection = 'column';
+                    div.style.height = '100%';
+                    div.style.justifyContent = 'space-between';
+
                     div.innerHTML = `
-                        <img src="${book.image}" alt="${book.title}" style="width:100%; border-radius:4px;" onerror="this.src='https://via.placeholder.com/150'">
-                        <h3 style="font-size:16px; margin:10px 0;">${book.title}</h3>
-                        <p style="color:#666; font-size:14px;">${book.author}</p>
-                        <div class="book-actions">
-                             <button class="btn-borrow" onclick="window.borrowBook('${doc.id}')">借閱</button>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <img src="${book.image}" alt="${book.title}" style="width:100%; height:200px; object-fit:contain; background-color: #f8f9fa; border-radius:4px;" onerror="this.src='https://via.placeholder.com/150'">
+                            
+                            <h3 style="margin: 10px 0; font-size: 16px; line-height: 1.4;">${book.title}</h3>
+                            
+                            <div style="text-align: left; font-size: 14px; padding: 0 5px; color: #555;">
+                                <p style="margin: 3px 0; color: #333;"><strong>作者：</strong>${book.author}</p>
+                                <p style="margin: 3px 0;"><strong>出版社：</strong>${book.publisher || ''}</p>
+                                <p style="margin: 3px 0;"><strong>ISBN：</strong>${book.isbn || ''}</p>
+                            </div>
                         </div>
+                        
+                        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; width: 100%;">
+                            <p style="color: #e4393c; font-weight: bold; font-size: 18px; margin: 0;">$${book.price || 0}</p>
+                            </div>
                     `;
                     container.appendChild(div);
                 });
             } catch (e) {
                 console.error(e);
-                container.innerHTML = '<p>無法載入熱門書籍。</p>';
+                container.innerHTML = '<p>無法載入推薦書籍。</p>';
             }
         }
-        
-        loadPopularBooks();
+
+        loadRecommendedBooks();
     </script>
 </body>
+
 </html>

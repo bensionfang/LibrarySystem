@@ -1,4 +1,3 @@
-// js/main.js - 最終修正版 (已加入價格顯示)
 import { db } from './firebase-config.js';
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -7,6 +6,7 @@ console.log('Library System 啟動中 (Firebase Mode)...');
 // --- 全域變數 ---
 let isLoggedIn = false;
 let allBooks = [];
+let priceMode = 'below';
 
 // --- DOM 元素 ---
 const searchInput = document.getElementById('search-input');
@@ -18,6 +18,10 @@ const advSearchBtn = document.getElementById('adv-search-btn');
 const advTitle = document.getElementById('adv-title');
 const advAuthor = document.getElementById('adv-author');
 const advPublisher = document.getElementById('adv-publisher');
+const advIsbn = document.getElementById('adv-isbn');
+const advPrice = document.getElementById('adv-price');
+const btnPriceAbove = document.getElementById('btn-price-above');
+const btnPriceBelow = document.getElementById('btn-price-below');
 
 // 登入相關
 const btnLoginTrigger = document.getElementById('btn-login-trigger');
@@ -47,10 +51,13 @@ window.loadBooks = async function () {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            let cleanAuthor = data.author || '未知作者';
+            if (cleanAuthor === '[') cleanAuthor = '未知作者';
+
             allBooks.push({
                 id: doc.id,
                 title: data.title || '無標題',
-                author: data.author || '未知作者',
+                author: cleanAuthor,
                 publisher: data.publisher || '',
                 image: data.image || 'https://via.placeholder.com/150',
                 price: data.price || 0,
@@ -67,7 +74,7 @@ window.loadBooks = async function () {
     }
 }
 
-// --- 2. 顯示書籍 (在此加入價格顯示) ---
+// --- 2. 顯示書籍 (UI Update) ---
 function displayBooks(books) {
     if (!resultsArea) return;
     resultsArea.innerHTML = '';
@@ -78,25 +85,44 @@ function displayBooks(books) {
     }
 
     const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+    const bookmarkList = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
 
     books.forEach(book => {
         const isBorrowed = borrowedList.some(b => b.id === book.id);
+        const isBookmarked = bookmarkList.some(b => b.id === book.id);
+
         const div = document.createElement('div');
         div.className = 'book-item';
+        div.style.display = 'flex';
+        div.style.flexDirection = 'column';
+        div.style.height = '100%';
+        div.style.justifyContent = 'space-between';
 
-        // 核心修改處：innerHTML 加入了價格與 ISBN 的顯示
         div.innerHTML = `
-            <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/150'">
-            <div class="book-info">
-                <h3>${book.title}</h3>
-                <p>作者：${book.author}</p>
-                <p style="font-size:12px; color:#999;">出版社: ${book.publisher}</p>
-                <p style="color: #e4393c; font-weight: bold; font-size: 1.1em; margin: 8px 0;">價格：$${book.price}</p>
-                <p style="font-size:11px; color:#ccc;">ISBN: ${book.isbn}</p>
-                <div class="book-actions">
+            <div style="flex-grow: 1; display: flex; flex-direction: column;"> 
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/150'" style="width:100%; height:200px; object-fit:contain; background-color: #f8f9fa; border-radius: 4px;">
+                
+                <h3 style="margin: 10px 0; font-size: 16px; line-height: 1.4;">${book.title}</h3>
+                
+                <div style="text-align: left; font-size: 14px; padding: 0 5px; color: #555;">
+                    <p style="margin: 3px 0; color: #333;"><strong>作者：</strong>${book.author}</p>
+                    <p style="margin: 3px 0;"><strong>出版社：</strong>${book.publisher}</p>
+                    <p style="margin: 3px 0;"><strong>ISBN：</strong>${book.isbn}</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; width: 100%;">
+                <p style="color: #e4393c; font-weight: bold; font-size: 18px; margin: 0 0 10px 0;">$${book.price}</p>
+                
+                <div class="book-actions" style="display: flex; gap: 5px;">
                     <button class="${isBorrowed ? 'btn-borrow disabled' : 'btn-borrow'}" 
-                        onclick="window.borrowBook('${book.id}')">
+                        onclick="window.borrowBook('${book.id}')" style="flex: 2;">
                         ${isBorrowed ? '已借閱' : '借閱'}
+                    </button>
+                    
+                    <button class="${isBookmarked ? 'btn-bookmark active' : 'btn-bookmark'}" 
+                        onclick="window.toggleBookmark('${book.id}')" style="flex: 1; border: 1px solid #d9534f; background: ${isBookmarked ? '#d9534f' : '#fff'}; color: ${isBookmarked ? '#fff' : '#d9534f'};">
+                        ${isBookmarked ? '♥' : '♡'}
                     </button>
                 </div>
             </div>
@@ -105,48 +131,48 @@ function displayBooks(books) {
     });
 }
 
-// --- 3. 搜尋功能 (一般搜尋) ---
+// --- 3. 搜尋功能 ---
 window.handleGeneralSearch = function () {
     if (!searchInput) return;
     const keyword = searchInput.value.trim().toLowerCase();
-
-    if (!keyword) {
-        displayBooks(allBooks);
-        return;
-    }
+    if (!keyword) { displayBooks(allBooks); return; }
 
     const filtered = allBooks.filter(book => {
         const title = (book.title || '').toLowerCase();
         const author = (book.author || '').toLowerCase();
         const isbn = (book.isbn || '').toString();
         const publisher = (book.publisher || '').toLowerCase();
-
         return title.includes(keyword) || author.includes(keyword) || isbn.includes(keyword) || publisher.includes(keyword);
     });
-
     displayBooks(filtered);
 }
 
-// --- 進階搜尋 ---
 function handleAdvancedSearch() {
     const t = advTitle ? advTitle.value.trim().toLowerCase() : '';
     const a = advAuthor ? advAuthor.value.trim().toLowerCase() : '';
     const p = advPublisher ? advPublisher.value.trim().toLowerCase() : '';
+    const i = advIsbn ? advIsbn.value.trim() : '';
+    const pr = advPrice ? parseInt(advPrice.value) : null;
 
     const filtered = allBooks.filter(book => {
         const title = (book.title || '').toLowerCase();
         const author = (book.author || '').toLowerCase();
         const publisher = (book.publisher || '').toLowerCase();
+        const isbn = (book.isbn || '').toString();
+        const price = book.price ? parseInt(book.price) : 0;
 
-        return (!t || title.includes(t)) &&
-            (!a || author.includes(a)) &&
-            (!p || publisher.includes(p));
+        let matchPrice = true;
+        if (pr !== null && !isNaN(pr)) {
+            if (priceMode === 'above') matchPrice = price >= pr;
+            else matchPrice = price <= pr;
+        }
+
+        return (!t || title.includes(t)) && (!a || author.includes(a)) && (!p || publisher.includes(p)) && (!i || isbn.includes(i)) && matchPrice;
     });
-
     displayBooks(filtered);
 }
 
-// --- 4. 登入與借閱邏輯 ---
+// --- 4. 登入、借閱、還書、書籤邏輯 ---
 window.openLoginModal = function () { if (modalLogin) modalLogin.classList.remove('hidden'); }
 window.closeLoginModal = function () { if (modalLogin) modalLogin.classList.add('hidden'); }
 
@@ -158,6 +184,7 @@ window.performLogin = function () {
         checkLoginStatus();
         window.closeLoginModal();
         alert("登入成功！");
+        if (typeof window.renderHistory === 'function') window.renderHistory();
     } else { alert("請輸入帳號"); }
 }
 
@@ -176,8 +203,9 @@ function checkLoginStatus() {
     }
 }
 
+// 借書
 window.borrowBook = function (bookId) {
-    if (!isLoggedIn) {
+    if (!localStorage.getItem('library_user')) {
         alert('請先登入！');
         window.openLoginModal();
         return;
@@ -185,19 +213,79 @@ window.borrowBook = function (bookId) {
     let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
     if (list.some(b => b.id === bookId)) { alert('已借閱過此書'); return; }
 
-    const targetBook = allBooks.find(b => b.id === bookId);
+    let targetBook = allBooks.find(b => b.id === bookId);
+
+    if (!targetBook) {
+        const bookmarks = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
+        targetBook = bookmarks.find(b => b.id === bookId);
+    }
+
     if (targetBook) {
+        targetBook.borrowDate = new Date().toISOString().split('T')[0];
         list.push(targetBook);
         localStorage.setItem('library_borrowed', JSON.stringify(list));
         alert(`成功借閱：${targetBook.title}`);
-        displayBooks(allBooks);
+
+        if (resultsArea) displayBooks(allBooks);
+        if (typeof window.renderHistory === 'function') window.renderHistory();
+        if (typeof window.renderBookmarks === 'function') window.renderBookmarks();
     }
+}
+
+// 還書
+window.returnBook = function (bookId) {
+    let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+    const newList = list.filter(b => b.id !== bookId);
+
+    if (list.length === newList.length) return;
+
+    localStorage.setItem('library_borrowed', JSON.stringify(newList));
+    alert('歸還成功！');
+
+    if (resultsArea) displayBooks(allBooks);
+    if (typeof window.renderHistory === 'function') window.renderHistory();
+}
+
+// 書籤 (新增：登入檢查)
+window.toggleBookmark = function (bookId) {
+    // 1. 檢查是否登入
+    if (!localStorage.getItem('library_user')) {
+        alert('請先登入才能使用收藏功能！');
+        window.openLoginModal();
+        return;
+    }
+
+    let list = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
+    const index = list.findIndex(b => b.id === bookId);
+
+    if (index >= 0) {
+        list.splice(index, 1);
+        alert('已移除收藏');
+    } else {
+        let targetBook = allBooks.find(b => b.id === bookId);
+        if (!targetBook) {
+            const borrowed = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+            targetBook = borrowed.find(b => b.id === bookId);
+        }
+
+        if (targetBook) {
+            list.push(targetBook);
+            alert('已加入收藏！');
+        }
+    }
+    localStorage.setItem('library_bookmarked', JSON.stringify(list));
+
+    // 更新畫面
+    if (resultsArea) displayBooks(allBooks);
+    if (typeof window.renderBookmarks === 'function') window.renderBookmarks();
 }
 
 // --- 5. 事件監聽 (初始化) ---
 window.addEventListener('DOMContentLoaded', () => {
     checkLoginStatus();
-    loadBooks();
+    if (document.getElementById('search-hero-section')) {
+        loadBooks();
+    }
 
     if (searchButton) searchButton.addEventListener('click', window.handleGeneralSearch);
     if (searchInput) {
@@ -207,14 +295,19 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     if (advSearchBtn) advSearchBtn.addEventListener('click', handleAdvancedSearch);
 
-    document.querySelectorAll('.tag').forEach(tag => {
-        tag.addEventListener('click', (e) => {
-            if (searchInput) {
-                searchInput.value = e.target.textContent;
-                window.handleGeneralSearch();
-            }
+    if (btnPriceAbove && btnPriceBelow) {
+        btnPriceAbove.addEventListener('click', () => {
+            priceMode = 'above';
+            btnPriceAbove.classList.add('active');
+            btnPriceBelow.classList.remove('active');
         });
-    });
+
+        btnPriceBelow.addEventListener('click', () => {
+            priceMode = 'below';
+            btnPriceBelow.classList.add('active');
+            btnPriceAbove.classList.remove('active');
+        });
+    }
 
     if (tabGeneral && tabAdvanced) {
         tabGeneral.addEventListener('click', () => {
@@ -231,4 +324,20 @@ window.addEventListener('DOMContentLoaded', () => {
     if (closeLoginBtn) closeLoginBtn.addEventListener('click', window.closeLoginModal);
     if (btnLoginSubmit) btnLoginSubmit.addEventListener('click', window.performLogin);
     if (btnLogout) btnLogout.addEventListener('click', window.performLogout);
+
+    const logoBtn = document.getElementById('logo-btn');
+    if (logoBtn) {
+        logoBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
+
+    document.querySelectorAll('.tag').forEach(tag => {
+        tag.addEventListener('click', (e) => {
+            if (searchInput) {
+                searchInput.value = e.target.textContent;
+                window.handleGeneralSearch();
+            }
+        });
+    });
 });

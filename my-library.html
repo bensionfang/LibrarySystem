@@ -138,7 +138,7 @@
         </div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
-            <a href="popular.html">熱門圖書</a>
+            <a href="popular.html">推薦書籍</a>
             <a href="my-library.html" class="auth-link">我的書房</a>
             <a href="about.html">網站說明</a>
             <a id="btn-login-trigger" class="login-btn">登入</a>
@@ -185,7 +185,8 @@
                             <th>操作</th>
                         </tr>
                     </thead>
-                    <tbody id="history-table-body"></tbody>
+                    <tbody id="history-table-body">
+                    </tbody>
                 </table>
             </div>
 
@@ -196,7 +197,9 @@
 
             <div id="section-bookmarks" class="content-section">
                 <h2 class="section-title">我的收藏書單</h2>
-                <div id="bookmarks-container" style="display:flex; flex-wrap:wrap; gap:20px;"></div>
+                <div id="bookmarks-container">
+                    <p style="text-align:center; color:#666;">載入中...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -209,90 +212,103 @@
                 <div class="input-group"><input type="text" id="login-user" placeholder="請輸入學號/帳號"></div>
                 <div class="input-group"><input type="password" id="login-pass" placeholder="請輸入密碼"></div>
                 <button id="btn-login-submit">登入</button>
+                <p style="margin-top:15px; font-size:13px; color:#666;">測試帳號：admin / 1234</p>
             </div>
         </div>
     </div>
+    <div id="toast-container"></div>
 
     <script type="module" src="js/main.js"></script>
     <script>
-        // --- 1. 分頁切換功能 ---
+        // 切換分頁邏輯
         function switchSection(id) {
             document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
             document.getElementById('menu-' + id).classList.add('active');
             document.getElementById('section-' + id).classList.add('active');
 
-            // 如果切換到借閱紀錄，重新渲染一次確保最新
-            if (id === 'history') renderBorrowHistory();
+            if (id === 'bookmarks') {
+                renderBookmarks();
+            } else if (id === 'history') {
+                renderHistory();
+            }
         }
 
-        // --- 2. 核心：渲染借閱紀錄 ---
-        function renderBorrowHistory() {
-            const tableBody = document.getElementById('history-table-body');
-            if (!tableBody) return;
+        // 渲染書籤
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarks-container');
+            const bookmarkList = JSON.parse(localStorage.getItem('library_bookmarked')) || [];
 
-            // 從 localStorage 讀取資料
-            const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+            container.innerHTML = '';
 
-            if (borrowedList.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">目前沒有借閱中的書籍</td></tr>';
+            if (bookmarkList.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#666; width:100%;">目前沒有收藏任何書籍。</p>';
                 return;
             }
 
-            tableBody.innerHTML = '';
-            borrowedList.forEach(book => {
-                const today = new Date().toLocaleDateString();
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <img src="${book.image}" style="width:45px; height:60px; object-fit:cover; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                            <div>
-                                <div style="font-weight:bold; color:#333;">${book.title}</div>
-                                <div style="font-size:11px; color:#999;">ISBN: ${book.isbn}</div>
-                            </div>
+            bookmarkList.forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'book-item';
+                div.style.display = 'flex';
+                div.style.flexDirection = 'column';
+                div.style.justifyContent = 'space-between';
+                div.style.border = '1px solid #eee';
+                div.style.padding = '15px';
+                div.style.borderRadius = '8px';
+
+                div.innerHTML = `
+                    <div style="flex-grow: 1; display: flex; flex-direction: column;"> 
+                        <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/150'" style="width:100%; height:200px; object-fit:contain; background-color: #f8f9fa;">
+                        <h3 style="margin: 10px 0;">${book.title}</h3>
+                        <div style="text-align: left; font-size: 14px; padding: 0 5px; color: #555;">
+                            <p style="margin: 3px 0; color: #333;"><strong>作者：</strong>${book.author}</p>
+                            <p style="margin: 3px 0;"><strong>ISBN：</strong>${book.isbn || '無'}</p>
                         </div>
-                    </td>
-                    <td style="color:#666;">${today}</td>
-                    <td><span style="background:#e8f0fe; color:#4285f4; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">借閱中</span></td>
-                    <td>
-                        <button onclick="returnBook('${book.id}')" 
-                            style="background:#feeef0; color:#d93025; border:1px solid #fad2cf; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold;">
-                            歸還
-                        </button>
-                    </td>
+                    </div>
+                    <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; width: 100%;">
+                        <p style="color: #e4393c; font-weight: bold; font-size: 18px; margin: 0 0 10px 0;">$${book.price || 0}</p>
+                        <div class="book-actions" style="display: flex; gap: 5px;">
+                            <button class="btn-borrow" onclick="window.borrowBook('${book.id}')" style="flex:2; padding:8px; background:#4285f4; color:white; border:none; border-radius:4px; cursor:pointer;">借閱</button>
+                            <button class="btn-bookmark active" onclick="window.toggleBookmark('${book.id}')" style="flex:1; padding:8px; background:#d9534f; color:white; border:1px solid #d9534f; border-radius:4px; cursor:pointer;">♥</button>
+                        </div>
+                    </div>
                 `;
-                tableBody.appendChild(tr);
+                container.appendChild(div);
             });
         }
 
-        // --- 3. 歸還功能 ---
-        window.returnBook = function (bookId) {
-            if (confirm('確定要歸還這本書嗎？')) {
-                let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
-                list = list.filter(b => b.id !== bookId);
-                localStorage.setItem('library_borrowed', JSON.stringify(list));
-                renderBorrowHistory();
-                alert('歸還成功！');
+        // 渲染借閱紀錄 (解決問題 4 的關鍵)
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+
+            tbody.innerHTML = '';
+
+            if (borrowedList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">目前沒有借閱紀錄</td></tr>';
+                return;
             }
+
+            borrowedList.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${book.title}</td>
+                    <td>${book.borrowDate || '2025-01-01'}</td>
+                    <td><span style="color:#d9534f; font-weight:bold;">借閱中</span></td>
+                    <td>
+                        <button onclick="window.returnBook('${book.id}')" 
+                        style="padding:5px 10px; background:#5cb85c; color:white; border:none; border-radius:4px; cursor:pointer;">
+                        歸還
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        // --- 4. 初始化 ---
-        window.addEventListener('DOMContentLoaded', () => {
-            renderBorrowHistory();
-
-            // 檢查登入顯示
-            const u = localStorage.getItem('library_user');
-            if (u) {
-                const userDisplay = document.getElementById('user-display');
-                if (userDisplay) {
-                    userDisplay.textContent = u + " 您好";
-                    userDisplay.classList.remove('hidden');
-                }
-                document.getElementById('btn-login-trigger')?.classList.add('hidden');
-                document.getElementById('btn-logout')?.classList.remove('hidden');
-            }
-        });
+        // 把渲染函式掛載到 Window，讓 main.js 也可以呼叫
+        window.renderHistory = renderHistory;
+        window.renderBookmarks = renderBookmarks;
     </script>
 </body>
 
