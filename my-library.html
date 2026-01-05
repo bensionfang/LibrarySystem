@@ -50,7 +50,6 @@
             color: #4285f4;
         }
 
-        /* 預設選中樣式 */
         .sidebar-menu li.active {
             background-color: #e8f0fe;
             color: #4285f4;
@@ -79,7 +78,6 @@
             display: none;
         }
 
-        /* 顯示內容的動畫 */
         .content-section.active {
             display: block;
             animation: fadeIn 0.3s;
@@ -102,7 +100,6 @@
             color: #555;
         }
 
-        /* 個人資料表單樣式 */
         .profile-form .form-group {
             margin-bottom: 20px;
         }
@@ -162,7 +159,6 @@
         </div>
 
         <div class="main-content">
-
             <div id="section-profile" class="content-section active">
                 <h2 class="section-title">個人資料</h2>
                 <div class="profile-form">
@@ -200,8 +196,7 @@
 
             <div id="section-bookmarks" class="content-section">
                 <h2 class="section-title">我的收藏書單</h2>
-                <div id="bookmarks-container" style="display:flex; flex-wrap:wrap; gap:20px;">
-                </div>
+                <div id="bookmarks-container" style="display:flex; flex-wrap:wrap; gap:20px;"></div>
             </div>
         </div>
     </div>
@@ -214,21 +209,90 @@
                 <div class="input-group"><input type="text" id="login-user" placeholder="請輸入學號/帳號"></div>
                 <div class="input-group"><input type="password" id="login-pass" placeholder="請輸入密碼"></div>
                 <button id="btn-login-submit">登入</button>
-                <p style="margin-top:15px; font-size:13px; color:#666;">測試帳號：admin / 1234</p>
             </div>
         </div>
     </div>
 
-    <div id="toast-container"></div>
-
     <script type="module" src="js/main.js"></script>
     <script>
+        // --- 1. 分頁切換功能 ---
         function switchSection(id) {
             document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
             document.getElementById('menu-' + id).classList.add('active');
             document.getElementById('section-' + id).classList.add('active');
+
+            // 如果切換到借閱紀錄，重新渲染一次確保最新
+            if (id === 'history') renderBorrowHistory();
         }
+
+        // --- 2. 核心：渲染借閱紀錄 ---
+        function renderBorrowHistory() {
+            const tableBody = document.getElementById('history-table-body');
+            if (!tableBody) return;
+
+            // 從 localStorage 讀取資料
+            const borrowedList = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+
+            if (borrowedList.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#999;">目前沒有借閱中的書籍</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            borrowedList.forEach(book => {
+                const today = new Date().toLocaleDateString();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <img src="${book.image}" style="width:45px; height:60px; object-fit:cover; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                            <div>
+                                <div style="font-weight:bold; color:#333;">${book.title}</div>
+                                <div style="font-size:11px; color:#999;">ISBN: ${book.isbn}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:#666;">${today}</td>
+                    <td><span style="background:#e8f0fe; color:#4285f4; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">借閱中</span></td>
+                    <td>
+                        <button onclick="returnBook('${book.id}')" 
+                            style="background:#feeef0; color:#d93025; border:1px solid #fad2cf; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:13px; font-weight:bold;">
+                            歸還
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- 3. 歸還功能 ---
+        window.returnBook = function (bookId) {
+            if (confirm('確定要歸還這本書嗎？')) {
+                let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
+                list = list.filter(b => b.id !== bookId);
+                localStorage.setItem('library_borrowed', JSON.stringify(list));
+                renderBorrowHistory();
+                alert('歸還成功！');
+            }
+        }
+
+        // --- 4. 初始化 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderBorrowHistory();
+
+            // 檢查登入顯示
+            const u = localStorage.getItem('library_user');
+            if (u) {
+                const userDisplay = document.getElementById('user-display');
+                if (userDisplay) {
+                    userDisplay.textContent = u + " 您好";
+                    userDisplay.classList.remove('hidden');
+                }
+                document.getElementById('btn-login-trigger')?.classList.add('hidden');
+                document.getElementById('btn-logout')?.classList.remove('hidden');
+            }
+        });
     </script>
 </body>
 

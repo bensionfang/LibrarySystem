@@ -1,59 +1,140 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
-    <title>圖書館後台管理系統</title>
+    <title>圖書館後台管理系統 - 快速匯入版</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        .admin-container { max-width: 800px; margin: 40px auto; padding: 20px; }
-        .form-card { 
-            background: #fff; padding: 30px; border-radius: 8px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 30px; 
-            border-top: 5px solid #28a745; 
+        .admin-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
         }
-        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
-        .form-row input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
-        
-        .btn-add { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        .btn-add:hover { background: #218838; }
-        .btn-upload { background: #6f42c1; margin-top: 10px; } /* 紫色按鈕代表 ZIP 功能 */
-        .btn-upload:hover { background: #5a32a3; }
-        
-        .book-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-bottom: 1px solid #eee; }
-        .book-list-item img { width: 50px; height: 70px; object-fit: cover; margin-right: 15px; border-radius: 4px; vertical-align: middle;}
-        .btn-delete { background: #dc3545; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
-        
-        /* 進度條樣式 */
-        .progress-bar { width: 100%; background-color: #e9ecef; border-radius: 4px; margin-top: 10px; height: 10px; overflow: hidden; display: none; }
-        .progress-fill { height: 100%; background-color: #28a745; width: 0%; transition: width 0.3s; }
+
+        .form-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border-top: 5px solid #28a745;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn-add {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-add:hover {
+            background: #218838;
+        }
+
+        .btn-upload {
+            background: #6f42c1;
+            margin-top: 10px;
+        }
+
+        .btn-upload:hover {
+            background: #5a32a3;
+        }
+
+        .book-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #eee;
+        }
+
+        .book-list-item img {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            margin-right: 15px;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-top: 10px;
+            height: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+            transition: width 0.3s;
+        }
     </style>
 </head>
+
 <body>
     <nav class="top-nav">
-        <div class="nav-left"><h1 class="logo-title">Library Admin (後台)</h1></div>
+        <div class="nav-left">
+            <h1 class="logo-title">Library Admin (快速匯入版)</h1>
+        </div>
         <div class="nav-right">
             <a href="index.html" style="font-weight: bold;">回到前台首頁 &rarr;</a>
         </div>
     </nav>
 
     <div class="admin-container">
-        <h2>📦 超級匯入 (支援 ZIP: JSON + 圖片)</h2>
+        <h2>📦 超級匯入 (快速網址連結版)</h2>
         <div class="form-card" style="border-top-color: #6f42c1;">
-            <p>請上傳包含 <code>.json</code> 與圖片檔的 <strong>ZIP 壓縮檔</strong>：</p>
+            <p>請上傳包含 <code>books_data.json</code> 的 <strong>ZIP 壓縮檔</strong>：</p>
             <input type="file" id="zip-file-input" accept=".zip">
-            <button class="btn-add btn-upload" id="btn-zip-upload">開始 ZIP 匯入</button>
-            
+            <button class="btn-add btn-upload" id="btn-zip-upload">開始快速匯入</button>
+
             <div class="progress-bar" id="progress-container">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
             <p id="upload-status" style="margin-top:10px; color:#666; font-size: 14px; white-space: pre-line;"></p>
-            
-            <div style="margin-top: 15px; padding: 10px; background: #f3e5f5; font-size: 13px; color: #4a148c; border-radius: 4px;">
-                <strong>💡 ZIP 結構說明：</strong><br>
-                1. 必須包含一個 JSON 檔 (例如 books.json)。<br>
-                2. JSON 裡的 <code>image</code> 欄位請直接寫檔名 (例如 "harry_potter.jpg")。<br>
-                3. 圖片檔案請一起放在 ZIP 裡，系統會自動上傳到雲端並連結！
+
+            <div
+                style="margin-top: 15px; padding: 10px; background: #e3f2fd; font-size: 13px; color: #0d47a1; border-radius: 4px;">
+                <strong>💡 運作說明：</strong><br>
+                1. 系統將直接使用 JSON 中的 <code>original_url</code> 作為圖片來源。<br>
+                2. <strong>不需要上傳圖片到 Storage</strong>，避開計費方案限制。<br>
+                3. 匯入速度極快，且節省雲端空間。
             </div>
         </div>
 
@@ -68,7 +149,7 @@
                 <input type="text" id="input-price" placeholder="價格">
             </div>
             <div class="form-row">
-                <input type="text" id="input-image" placeholder="圖片網址 (或留空使用預設圖)">
+                <input type="text" id="input-image" placeholder="圖片網址">
                 <input type="text" id="input-isbn" placeholder="ISBN">
             </div>
             <button class="btn-add" id="btn-add-book">＋ 確認新增書籍</button>
@@ -81,13 +162,9 @@
     </div>
 
     <script type="module">
-        // 引入 db 和 storage
-        import { db, storage } from './js/firebase-config.js';
-        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc } 
-        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // 引入 Storage 上傳功能
-        import { ref, uploadBytes, getDownloadURL } 
-        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+        import { db } from './js/firebase-config.js';
+        import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc }
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const bookListEl = document.getElementById('admin-book-list');
         const btnAdd = document.getElementById('btn-add-book');
@@ -97,161 +174,127 @@
         const progressContainer = document.getElementById('progress-container');
         const progressFill = document.getElementById('progress-fill');
 
-        // --- 1. ZIP 匯入核心邏輯 ---
         btnZipUpload.addEventListener('click', async () => {
             const file = zipInput.files[0];
             if (!file) { alert("請先選擇 ZIP 檔案！"); return; }
 
             try {
-                // UI 狀態重置
                 btnZipUpload.disabled = true;
-                statusText.textContent = "⏳ 正在解壓縮 ZIP...";
+                statusText.textContent = "⏳ 正在讀取 JSON 資料...";
                 statusText.style.color = "#666";
                 progressContainer.style.display = 'block';
-                progressFill.style.width = '5%';
+                progressFill.style.width = '0%';
 
-                // A. 解壓縮 ZIP
                 const zip = await JSZip.loadAsync(file);
-                
-                // B. 尋找 JSON 檔案
                 let jsonFile = null;
-                let imageFiles = {}; // 檔名 -> ZipObject 對映
 
+                // A. 尋找 JSON 檔案
                 zip.forEach((relativePath, zipEntry) => {
-                    if (zipEntry.name.endsWith('.json')) {
+                    if (zipEntry.name.toLowerCase().endsWith('.json')) {
                         jsonFile = zipEntry;
-                    } else if (zipEntry.name.match(/\.(jpg|jpeg|png|gif)$/i)) {
-                        // 處理路徑：移除資料夾前綴，只留檔名 (例如 "imgs/cover.jpg" -> "cover.jpg")
-                        const fileName = zipEntry.name.split('/').pop(); 
-                        imageFiles[fileName] = zipEntry;
                     }
                 });
 
-                if (!jsonFile) { throw new Error("ZIP 檔內找不到 .json 資料檔！"); }
+                if (!jsonFile) { throw new Error("ZIP 內找不到 .json 檔案！"); }
 
-                // C. 讀取 JSON 內容
                 const jsonContent = await jsonFile.async("string");
                 const booksData = JSON.parse(jsonContent);
 
-                if (!Array.isArray(booksData)) { throw new Error("JSON 格式錯誤：必須是陣列 [...]"); }
+                if (!Array.isArray(booksData) || booksData.length === 0) {
+                    throw new Error("JSON 資料格式錯誤或為空。");
+                }
 
-                statusText.textContent = `📦 讀取成功！準備匯入 ${booksData.length} 本書籍...\n正在上傳圖片至雲端，請稍候...`;
-                
+                statusText.textContent = `📦 準備匯入 ${booksData.length} 本書籍...`;
+
                 let successCount = 0;
                 const total = booksData.length;
 
-                // D. 逐筆處理
+                // D. 逐筆處理 (跳過 Storage 上傳)
                 for (let i = 0; i < total; i++) {
                     const book = booksData[i];
-                    let finalImageUrl = 'https://via.placeholder.com/150?text=No+Image';
 
-                    // 處理圖片：檢查 JSON 裡的 image 欄位是否有對應 ZIP 裡的檔案
-                    // 欄位名稱支援 image, image_filename, cover
-                    const imgNameInJson = book.image || book.image_filename || book.cover;
-                    
-                    if (imgNameInJson && imageFiles[imgNameInJson]) {
-                        // 1. 從 ZIP 讀取圖片 Blob
-                        const imgBlob = await imageFiles[imgNameInJson].async("blob");
-                        
-                        // 2. 設定上傳路徑 (加上時間戳記避免檔名重複)
-                        const uniqueName = `book_covers/${Date.now()}_${imgNameInJson}`;
-                        const storageRef = ref(storage, uniqueName);
-                        
-                        // 3. 上傳到 Firebase Storage
-                        await uploadBytes(storageRef, imgBlob);
-                        
-                        // 4. 取得永久網址 (Download URL)
-                        finalImageUrl = await getDownloadURL(storageRef);
-                    } else if (imgNameInJson && imgNameInJson.startsWith('http')) {
-                        // 如果本來就是網路圖片
-                        finalImageUrl = imgNameInJson;
-                    }
+                    // 【核心修正】：直接使用爬蟲抓到的原始圖片網址
+                    let finalImageUrl = book.original_url || book.image || 'https://via.placeholder.com/150';
 
-                    // E. 寫入資料庫
+                    // 寫入 Firestore
                     await addDoc(collection(db, "books"), {
                         title: book.title || '未命名',
-                        author: book.author || '未知作者',
-                        publisher: book.publisher || '',
+                        author: book.author || '天瓏精選',
+                        publisher: book.publisher || '天瓏',
                         price: book.price || 0,
                         isbn: book.isbn || '',
-                        image: finalImageUrl, // 這裡是雲端網址
+                        image: finalImageUrl, // 儲存外部圖片網址
                         availability: 'In Stock',
                         createdAt: new Date()
                     });
 
                     successCount++;
-                    // 更新進度條
                     const percentage = Math.round((successCount / total) * 100);
                     progressFill.style.width = `${percentage}%`;
-                    statusText.textContent = `🚀 正在匯入... (${successCount}/${total})\n剛處理完：${book.title}`;
+                    statusText.textContent = `🚀 快速匯入進度: ${successCount}/${total}\n已處理: ${book.title}`;
                 }
 
-                statusText.textContent = `✅ 匯入完成！成功加入 ${successCount} 本書籍。`;
+                statusText.textContent = `✅ 匯入成功！已將 ${successCount} 本書籍連結存入雲端資料庫。`;
                 statusText.style.color = "green";
-                zipInput.value = ''; // 清空
+                zipInput.value = '';
 
             } catch (err) {
                 console.error(err);
                 statusText.textContent = `❌ 錯誤：${err.message}`;
                 statusText.style.color = "red";
-                alert("匯入失敗，請檢查 Console 或 ZIP 格式");
             } finally {
                 btnZipUpload.disabled = false;
             }
         });
 
-        // --- 2. 監聽書籍列表 (與之前相同) ---
+        // 監聽列表與新增功能
         function loadAdminBooks() {
             const q = query(collection(db, "books"), orderBy("createdAt", "desc"));
             onSnapshot(q, (snapshot) => {
                 bookListEl.innerHTML = '';
-                if (snapshot.empty) { bookListEl.innerHTML = '<p style="padding:20px;">目前沒有書籍</p>'; return; }
+                if (snapshot.empty) { bookListEl.innerHTML = '<p style="padding:20px;">資料庫目前是空的</p>'; return; }
                 snapshot.forEach(docSnap => {
                     const book = docSnap.data();
                     const div = document.createElement('div');
                     div.className = 'book-list-item';
                     div.innerHTML = `
                         <div style="display:flex; align-items:center;">
-                            <img src="${book.image}" alt="cover" onerror="this.src='https://via.placeholder.com/150'">
+                            <img src="${book.image}" onerror="this.src='https://via.placeholder.com/150'">
                             <div>
                                 <strong>${book.title}</strong>
-                                <br><span style="color:#666; font-size:12px;">${book.author} | $${book.price}</span>
+                                <br><span style="color:#666; font-size:12px;">${book.author} | $${book.price} | ISBN: ${book.isbn}</span>
                             </div>
                         </div>
                         <button class="btn-delete" data-id="${docSnap.id}">刪除</button>
                     `;
                     bookListEl.appendChild(div);
                 });
-                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', deleteBook));
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', async (e) => {
+                    if (confirm('確定要從雲端刪除此書籍？')) await deleteDoc(doc(db, "books", e.target.getAttribute('data-id')));
+                }));
             });
         }
 
-        // --- 3. 手動新增 (精簡版) ---
-        async function addBook() {
+        btnAdd.addEventListener('click', async () => {
             const title = document.getElementById('input-title').value.trim();
             const author = document.getElementById('input-author').value.trim();
-            const img = document.getElementById('input-image').value.trim();
-            if(!title || !author) { alert("書名作者必填"); return; }
+            if (!title || !author) { alert("書名與作者為必填項目"); return; }
             btnAdd.disabled = true;
             await addDoc(collection(db, "books"), {
-                title, author, 
+                title, author,
                 publisher: document.getElementById('input-publisher').value,
                 price: document.getElementById('input-price').value,
                 isbn: document.getElementById('input-isbn').value,
-                image: img || 'https://via.placeholder.com/150',
+                image: document.getElementById('input-image').value || 'https://via.placeholder.com/150',
                 createdAt: new Date()
             });
-            alert("新增成功");
-            document.querySelectorAll('input').forEach(i=>i.value='');
+            document.querySelectorAll('.form-card input').forEach(i => i.value = '');
             btnAdd.disabled = false;
-        }
+            alert("手動新增成功！");
+        });
 
-        async function deleteBook(e) {
-            if(confirm('確定刪除？')) await deleteDoc(doc(db, "books", e.target.getAttribute('data-id')));
-        }
-
-        btnAdd.addEventListener('click', addBook);
         loadAdminBooks();
     </script>
 </body>
+
 </html>
