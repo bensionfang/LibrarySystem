@@ -8,25 +8,74 @@
     <link rel="stylesheet" href="css/style.css">
     <style>
         .about-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 50px auto;
             background: white;
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .about-header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 20px;
         }
 
         .about-title {
             font-size: 32px;
-            border-bottom: 2px solid #4285f4;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            color: #333;
+            margin-bottom: 10px;
         }
 
-        .about-content p {
+        .about-subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .feature-card {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #4285f4;
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card h3 {
+            margin-top: 0;
+            color: #4285f4;
+            font-size: 18px;
+        }
+
+        .tech-stack {
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #e8f0fe;
+            border-radius: 8px;
+        }
+
+        .tech-stack h3 {
+            margin-top: 0;
+            color: #1967d2;
+        }
+
+        ul {
+            padding-left: 20px;
             line-height: 1.8;
             color: #555;
-            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -38,28 +87,61 @@
         </div>
         <div class="nav-right">
             <a id="nav-home" href="index.html">首頁</a>
-            <a href="popular.html">熱門圖書</a>
-
+            <a href="popular.html">推薦書籍</a>
             <a href="my-library.html" class="auth-link">我的書房</a>
-
             <a href="about.html">網站說明</a>
             <a id="btn-login-trigger" class="login-btn">登入</a>
             <a id="user-display" class="hidden" style="font-weight:bold; color:#4285f4; cursor:default;"></a>
             <a id="btn-logout" class="hidden" style="color:#d9534f;">登出</a>
         </div>
     </nav>
+
     <div class="about-container">
-        <h2 class="about-title">關於本圖書館系統</h2>
+        <div class="about-header">
+            <h2 class="about-title">關於 Library System</h2>
+            <p class="about-subtitle">一個整合雲端資料庫與前端技術的圖書館管理系統</p>
+        </div>
+
         <div class="about-content">
-            <p>歡迎使用 Library System！這是一個模擬圖書館藏書查詢系統。</p>
-            <h3>核心功能</h3>
-            <ul>
-                <li>快速搜尋：支援即時關鍵字過濾</li>
-                <li>進階查詢：針對書名、作者、出版社篩選</li>
-                <li>個人書房：管理借閱紀錄與個人資料</li>
-            </ul>
+            <p style="font-size: 18px; line-height: 1.6; color: #444;">
+                歡迎使用 <strong>Library System</strong>。本系統旨在提供一個直覺、高效且功能完整的圖書借閱平台。
+                透過整合 Firebase 雲端資料庫與 LocalStorage 本地儲存技術，我們實現了流暢的「無伺服器 (Serverless)」體驗，讓使用者能輕鬆檢索、收藏並管理書籍。
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🔍 智慧搜尋引擎</h3>
+                    <p>支援關鍵字模糊搜尋，並提供針對<strong>書名、作者、出版社、ISBN 與價格範圍</strong>的進階篩選功能，快速找到您需要的書籍。</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>☁️ 雲端即時連線</h3>
+                    <p>採用 <strong>Google Firebase Firestore</strong> 作為後端資料庫，確保所有書籍資料即時同步，並支援動態新增與刪除。</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📚 個人化書房</h3>
+                    <p>專屬的會員中心，可查看<strong>目前借閱狀態</strong>、<strong>歷史紀錄</strong>與<strong>個人書籤收藏</strong>，並支援一鍵歸還功能。</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>⚙️ 高效後台管理</h3>
+                    <p>內建強大的管理員後台，支援 <strong>ZIP/JSON 批次匯入</strong>與外部圖片連結整合，大幅降低資料維護成本。</p>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <h3>🛠️ 技術架構 (Tech Stack)</h3>
+                <ul>
+                    <li><strong>前端核心：</strong> HTML5, CSS3, JavaScript (ES6 Modules)</li>
+                    <li><strong>雲端服務：</strong> Firebase Firestore (NoSQL Database), Firebase Storage</li>
+                    <li><strong>狀態管理：</strong> LocalStorage (模擬會員 Session 與借閱紀錄)</li>
+                    <li><strong>介面設計：</strong> RWD 響應式設計 (Flexbox & Grid Layout), Toast 通知系統</li>
+                </ul>
+            </div>
         </div>
     </div>
+
     <div id="modal-login" class="modal hidden">
         <div class="modal-content login-modal-content">
             <span class="close-btn login-close">&times;</span>
@@ -73,6 +155,7 @@
         </div>
     </div>
     <div id="toast-container"></div>
+
     <script type="module" src="js/main.js"></script>
 </body>
 

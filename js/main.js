@@ -3,6 +3,31 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/f
 
 console.log('Library System 啟動中 (Firebase Mode)...');
 
+// --- 0. 新增：Toast 訊息工具 ---
+window.showToast = function (message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`; // type: 'success' or 'error'
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // 動畫進場
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // 3秒後消失
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
+
 // --- 全域變數 ---
 let isLoggedIn = false;
 let allBooks = [];
@@ -66,7 +91,17 @@ window.loadBooks = async function () {
         });
 
         console.log(`成功載入 ${allBooks.length} 本書籍`);
-        displayBooks(allBooks);
+
+        // 修改：載入完成後，檢查網址是否有搜尋參數 (為了 popular.html 的跳轉)
+        const params = new URLSearchParams(window.location.search);
+        const query = params.get('q');
+
+        if (query && searchInput) {
+            searchInput.value = query;
+            window.handleGeneralSearch(); // 自動執行搜尋
+        } else {
+            displayBooks(allBooks); // 正常顯示全部
+        }
 
     } catch (error) {
         console.error("Firebase 連線失敗:", error);
@@ -74,7 +109,7 @@ window.loadBooks = async function () {
     }
 }
 
-// --- 2. 顯示書籍 (UI Update) ---
+// --- 2. 顯示書籍 ---
 function displayBooks(books) {
     if (!resultsArea) return;
     resultsArea.innerHTML = '';
@@ -172,7 +207,7 @@ function handleAdvancedSearch() {
     displayBooks(filtered);
 }
 
-// --- 4. 登入、借閱、還書、書籤邏輯 ---
+// --- 4. 登入、借閱、還書、書籤邏輯 (全部改用 showToast) ---
 window.openLoginModal = function () { if (modalLogin) modalLogin.classList.remove('hidden'); }
 window.closeLoginModal = function () { if (modalLogin) modalLogin.classList.add('hidden'); }
 
@@ -183,9 +218,11 @@ window.performLogin = function () {
         localStorage.setItem('library_user', u);
         checkLoginStatus();
         window.closeLoginModal();
-        alert("登入成功！");
+        window.showToast("登入成功！", "success");
         if (typeof window.renderHistory === 'function') window.renderHistory();
-    } else { alert("請輸入帳號"); }
+    } else {
+        window.showToast("請輸入帳號", "error");
+    }
 }
 
 window.performLogout = function () {
@@ -206,12 +243,15 @@ function checkLoginStatus() {
 // 借書
 window.borrowBook = function (bookId) {
     if (!localStorage.getItem('library_user')) {
-        alert('請先登入！');
+        window.showToast('請先登入！', 'error');
         window.openLoginModal();
         return;
     }
     let list = JSON.parse(localStorage.getItem('library_borrowed')) || [];
-    if (list.some(b => b.id === bookId)) { alert('已借閱過此書'); return; }
+    if (list.some(b => b.id === bookId)) {
+        window.showToast('已借閱過此書', 'error');
+        return;
+    }
 
     let targetBook = allBooks.find(b => b.id === bookId);
 
@@ -224,7 +264,7 @@ window.borrowBook = function (bookId) {
         targetBook.borrowDate = new Date().toISOString().split('T')[0];
         list.push(targetBook);
         localStorage.setItem('library_borrowed', JSON.stringify(list));
-        alert(`成功借閱：${targetBook.title}`);
+        window.showToast(`成功借閱：${targetBook.title}`, 'success');
 
         if (resultsArea) displayBooks(allBooks);
         if (typeof window.renderHistory === 'function') window.renderHistory();
@@ -240,17 +280,16 @@ window.returnBook = function (bookId) {
     if (list.length === newList.length) return;
 
     localStorage.setItem('library_borrowed', JSON.stringify(newList));
-    alert('歸還成功！');
+    window.showToast('歸還成功！', 'success');
 
     if (resultsArea) displayBooks(allBooks);
     if (typeof window.renderHistory === 'function') window.renderHistory();
 }
 
-// 書籤 (新增：登入檢查)
+// 書籤 (改用 showToast)
 window.toggleBookmark = function (bookId) {
-    // 1. 檢查是否登入
     if (!localStorage.getItem('library_user')) {
-        alert('請先登入才能使用收藏功能！');
+        window.showToast('請先登入才能使用收藏功能！', 'error');
         window.openLoginModal();
         return;
     }
@@ -260,7 +299,7 @@ window.toggleBookmark = function (bookId) {
 
     if (index >= 0) {
         list.splice(index, 1);
-        alert('已移除收藏');
+        window.showToast('已移除收藏', 'success');
     } else {
         let targetBook = allBooks.find(b => b.id === bookId);
         if (!targetBook) {
@@ -270,12 +309,11 @@ window.toggleBookmark = function (bookId) {
 
         if (targetBook) {
             list.push(targetBook);
-            alert('已加入收藏！');
+            window.showToast('已加入收藏！', 'success');
         }
     }
     localStorage.setItem('library_bookmarked', JSON.stringify(list));
 
-    // 更新畫面
     if (resultsArea) displayBooks(allBooks);
     if (typeof window.renderBookmarks === 'function') window.renderBookmarks();
 }
