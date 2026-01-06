@@ -445,3 +445,25 @@ body.searching #search-hero-section {
 .toast.error {
     background-color: #d9534f;
 }
+
+/* 手機版優化 */
+@media (max-width: 768px) {
+    .top-nav {
+        flex-direction: column;
+        height: auto;
+        padding: 10px;
+    }
+
+    .nav-right {
+        width: 100%;
+        overflow-x: auto;
+        /* 允許橫向滑動 */
+        padding-top: 10px;
+        justify-content: flex-start;
+    }
+
+    .nav-right>a {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+}
