@@ -27,6 +27,7 @@ body {
     color: #000;
     margin: 0;
     cursor: pointer;
+    white-space: nowrap; /* ★ 關鍵：強制不換行 */
 }
 
 .nav-right {
@@ -466,4 +467,140 @@ body.searching #search-hero-section {
         padding: 10px 15px;
         font-size: 14px;
     }
+}
+/* --- 深色模式 (Dark Mode) --- */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* 1. 卡片背景與邊框 */
+body.dark-mode .book-item, 
+body.dark-mode .modal-content,
+body.dark-mode .search-box-wrapper,
+body.dark-mode .sidebar,
+body.dark-mode .main-content {
+    background-color: #1e1e1e; /* 深灰底色 */
+    border-color: #444;        /* 邊框變淺一點的灰，才看得到界線 */
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5); /* 陰影加深 */
+}
+
+/* 2. 修正書本資訊的文字顏色 */
+body.dark-mode .book-item h3 {
+    color: #ffffff !important; /* 書名強制變全白 */
+}
+
+body.dark-mode .book-item p {
+    color: #bbbbbb !important; /* 作者、出版社變淺灰 */
+}
+
+/* 3. 修正價格顏色 (原本的深紅在黑底看不清楚，改亮紅) */
+body.dark-mode .book-item p[style*="color: red"], 
+body.dark-mode .price-tag, 
+body.dark-mode h3[style*="color: red"] {
+    color: #ff6b6b !important; /* 亮紅色 */
+    font-weight: bold;
+}
+
+/* 4. 導覽列設定 */
+body.dark-mode .top-nav {
+    background-color: #1e1e1e;
+    border-bottom: 1px solid #333;
+}
+body.dark-mode .nav-right > a, 
+body.dark-mode .logo-title,
+body.dark-mode .dropbtn {
+    color: #ffffff;
+}
+body.dark-mode .nav-right > a:hover {
+    background-color: #333;
+}
+
+/* 5. 輸入框優化 */
+body.dark-mode input {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid #555;
+}
+body.dark-mode ::placeholder { /* 輸入框的提示文字 */
+    color: #888; 
+}
+/* ====== 深色模式補強包 (解決看不清楚的問題) ====== */
+
+/* 1. 讓所有標題、標籤、文字變亮 */
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4, 
+body.dark-mode p, 
+body.dark-mode span, 
+body.dark-mode label, 
+body.dark-mode li {
+    color: #e0e0e0 !important;
+}
+
+/* 2. 修正「進階查詢」的分頁 (Tab) */
+body.dark-mode .tab {
+    background-color: #2d2d2d; /* 未選中的分頁變深灰 */
+    color: #888 !important;    /* 文字變灰 */
+    border: 1px solid #444;
+}
+body.dark-mode .tab.active {
+    background-color: #1e1e1e; /* 選中的分頁變黑 */
+    color: #4285f4 !important; /* 選中的文字保持藍色 */
+    border-bottom: 2px solid #1e1e1e; /* 把底線蓋掉，讓它跟下面連在一起 */
+}
+
+/* 3. 修正「我的書房」側邊選單 */
+body.dark-mode .sidebar {
+    background-color: #1e1e1e;
+    border-right: 1px solid #333;
+}
+body.dark-mode .sidebar-menu li {
+    color: #bbb !important; /* 選單預設文字 */
+    border-bottom: 1px solid #333;
+}
+body.dark-mode .sidebar-menu li:hover {
+    background-color: #333;
+    color: #fff !important;
+}
+body.dark-mode .sidebar-menu li.active {
+    background-color: #2d2d2d;
+    color: #4285f4 !important; /* 選中時變藍 */
+    font-weight: bold;
+}
+
+/* 4. 修正「個人資料」表單輸入框 */
+body.dark-mode .profile-form input,
+body.dark-mode .profile-form select {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid #555;
+}
+/* 讓 disabled 的輸入框 (如姓名、系級) 稍微暗一點 */
+body.dark-mode .profile-form input:disabled {
+    background-color: #1a1a1a;
+    color: #888;
+}
+
+/* 5. 修正「網站說明 (About)」頁面 */
+/* 強制把所有白色背景的區塊變成深色 */
+body.dark-mode .about-container, 
+body.dark-mode .card,
+body.dark-mode .feature-card,  /* <--- 把你剛剛查到的 class 名字填在這裡，記得前面加一點 (.) */
+body.dark-mode .tech-stack,
+
+body.dark-mode div[style*="background: white"], 
+body.dark-mode div[style*="background-color: white"] {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #444 !important;
+    box-shadow: none !important;
+}
+
+/* 6. 熱門搜尋下方的關鍵字 */
+body.dark-mode .hot-search,
+body.dark-mode .search-tips {
+    color: #aaa !important;
 }
